@@ -1,3 +1,4 @@
+import binascii
 from functools import lru_cache
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -52,7 +53,7 @@ class Settings(BaseSettings):
             raise ValueError("SESSION_IDLE_TIMEOUT_MINUTES must be at least 5")
         try:
             Fernet(self.otp_encryption_key.encode("ascii"))
-        except (ValueError, TypeError, InvalidToken):
+        except (ValueError, TypeError, InvalidToken, binascii.Error):
             raise ValueError("OTP_ENCRYPTION_KEY must be a valid Fernet key") from None
 
         if self.environment.lower() == "production":
@@ -71,8 +72,8 @@ class Settings(BaseSettings):
                     raise ValueError(f"Production requires a unique high-entropy {name}")
             if not self.redis_url.startswith("rediss://") or "@" not in self.redis_url:
                 raise ValueError("Production REDIS_URL must use TLS and authenticated Redis credentials")
-            if "sslmode=require" not in self.database_url and "sslmode=verify-full" not in self.database_url:
-                raise ValueError("Production DATABASE_URL must enforce PostgreSQL TLS")
+            if "sslmode=verify-full" not in self.database_url:
+                raise ValueError("Production DATABASE_URL must use PostgreSQL TLS with server certificate verification (sslmode=verify-full)")
             if not self.frontend_base_url.startswith("https://"):
                 raise ValueError("Production FRONTEND_BASE_URL must use HTTPS")
             if not all([self.smtp_host, self.smtp_username, self.smtp_password, self.smtp_from_email]):

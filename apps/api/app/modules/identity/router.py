@@ -500,6 +500,11 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> TokenResp
         session.revoked_at = now
         db.commit()
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    idle_anchor = session.last_used_at or session.created_at
+    if idle_anchor < now - timedelta(minutes=get_settings().session_idle_timeout_minutes):
+        session.revoked_at = now
+        db.commit()
+        raise HTTPException(status_code=401, detail="Session expired due to inactivity")
 
     user = db.get(User, session.user_id)
     if user is None or not user.is_active or user.email_verified_at is None:

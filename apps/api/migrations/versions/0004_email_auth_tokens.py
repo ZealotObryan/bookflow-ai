@@ -29,7 +29,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id", name="pk_auth_tokens"),
         sa.UniqueConstraint("token_hash", name="uq_auth_tokens_token_hash"),
-        sa.CheckConstraint("purpose IN ('verify_email', 'password_reset')", name="purpose"),
+        sa.CheckConstraint("purpose IN ('verify_email', 'password_reset')", name="ck_auth_tokens_purpose"),
     )
     op.create_index("ix_auth_tokens_user_id", "auth_tokens", ["user_id"])
 

@@ -37,13 +37,17 @@ def send_transactional_email(*, recipient: str, subject: str, text_body: str) ->
                 context=context,
             ) as smtp:
                 smtp.login(settings.smtp_username, settings.smtp_password)
-                smtp.send_message(message)
+                refused = smtp.send_message(message)
+                if refused:
+                    raise EmailDeliveryError("SMTP server refused the recipient")
         else:
             with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=10) as smtp:
                 smtp.ehlo()
                 smtp.starttls(context=context)
                 smtp.ehlo()
                 smtp.login(settings.smtp_username, settings.smtp_password)
-                smtp.send_message(message)
+                refused = smtp.send_message(message)
+                if refused:
+                    raise EmailDeliveryError("SMTP server refused the recipient")
     except (OSError, smtplib.SMTPException) as exc:
         raise EmailDeliveryError("Transactional email delivery failed") from exc

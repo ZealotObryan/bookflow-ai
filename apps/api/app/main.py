@@ -28,7 +28,7 @@ async def security_headers(request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     response.headers["Cache-Control"] = "no-store"
-    if request.url.scheme == "https":
+    if request.url.scheme == "https" or request.headers.get("x-forwarded-proto", "").lower() == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 

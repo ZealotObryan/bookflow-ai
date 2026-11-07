@@ -49,8 +49,8 @@ def upgrade() -> None:
         sa.Column("attempts", sa.Integer(), server_default="0", nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.PrimaryKeyConstraint("id", name="pk_phone_otp_challenges"),
-        sa.CheckConstraint("purpose IN ('login', 'link')", name="purpose"),
-        sa.CheckConstraint("attempts >= 0 AND attempts <= 5", name="attempts"),
+        sa.CheckConstraint("purpose IN ('login', 'link')", name="ck_phone_otp_challenges_purpose"),
+        sa.CheckConstraint("attempts >= 0 AND attempts <= 5", name="ck_phone_otp_challenges_attempts"),
     )
     op.create_index("ix_phone_otp_challenges_phone_e164", "phone_otp_challenges", ["phone_e164"])
 
