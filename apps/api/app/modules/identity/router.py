@@ -150,6 +150,7 @@ def _create_challenge(
     ).all()
     for challenge in previous:
         challenge.consumed_at = now
+        challenge.code_ciphertext = None
 
     code = new_otp()
     challenge = PhoneOtpChallenge(
@@ -207,10 +208,12 @@ def _verify_code(
         challenge.attempts += 1
         if challenge.attempts >= OTP_MAX_ATTEMPTS:
             challenge.consumed_at = now
+            challenge.code_ciphertext = None
         db.commit()
         raise HTTPException(status_code=400, detail="Invalid or expired verification code")
 
     challenge.consumed_at = now
+    challenge.code_ciphertext = None
     return challenge, user
 
 
@@ -372,6 +375,8 @@ async def tumasend_webhook(request: Request, db: Session = Depends(get_db)) -> d
         event = json.loads(raw_body)
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid webhook payload") from None
+    if not isinstance(event, dict) or not isinstance(event.get("payload", {}), dict):
+        raise HTTPException(status_code=400, detail="Invalid webhook payload")
     event_type = event.get("event_type")
     data = event.get("payload") or {}
     batch_id = data.get("batch_id")
@@ -399,7 +404,8 @@ async def tumasend_webhook(request: Request, db: Session = Depends(get_db)) -> d
 
     if event_type == "message.failed" and channel == "whatsapp":
         if (
-            challenge.sms_batch_id is None
+            challenge.delivery_status == "whatsapp_queued"
+            and challenge.sms_batch_id is None
             and challenge.consumed_at is None
             and challenge.expires_at > datetime.now(UTC)
         ):
@@ -415,7 +421,7 @@ async def tumasend_webhook(request: Request, db: Session = Depends(get_db)) -> d
                 challenge.sms_batch_id = client.send_sms(challenge.phone_e164, message)
                 challenge.delivery_status = "sms_queued"
             except (TumaSendError, InvalidToken):
-                challenge.delivery_status = "delivery_failed"
+                challenge.delivery_status = "sms_failed"
         db.commit()
         return {"status": "fallback_attempted"}
 
