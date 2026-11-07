@@ -1,5 +1,8 @@
 import uuid
 
+import jwt
+
+from app.core.config import get_settings
 from app.core.security import (
     create_access_token,
     decrypt_otp,
@@ -49,3 +52,18 @@ def test_access_token_contains_session_binding() -> None:
     token = create_access_token(uuid.uuid4(), uuid.uuid4())
     assert isinstance(token, str)
     assert token.count(".") == 2
+    payload = jwt.decode(
+        token,
+        get_settings().jwt_secret_key,
+        algorithms=[get_settings().jwt_algorithm],
+        issuer=get_settings().jwt_issuer,
+        audience=get_settings().jwt_audience,
+    )
+    assert payload["sid"]
+    assert payload["jti"]
+
+
+def test_refresh_token_is_not_exposed_in_api_token_schema() -> None:
+    from app.modules.identity.schemas import TokenResponse
+
+    assert "refresh_token" not in TokenResponse.model_fields
