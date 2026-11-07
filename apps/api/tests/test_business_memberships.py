@@ -6,8 +6,8 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from app.db.base import Base
 from app.core.security import hash_refresh_token
+from app.db.base import Base
 from app.models import AuditEvent, Business, BusinessInvitation, BusinessMembership, User
 from app.modules.businesses.router import accept_invitation, create_invitation, update_member
 from app.modules.businesses.schemas import (
