@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 from fastapi import HTTPException
+from redis.exceptions import RedisError
 from starlette.requests import Request
 
 from app.core import rate_limit
@@ -13,6 +14,11 @@ class FakeRedis:
 
     async def eval(self, script: str, numkeys: int, key: str, window: int) -> list[int]:
         return [self.count, window]
+
+
+class BrokenRedis:
+    async def eval(self, script: str, numkeys: int, key: str, window: int) -> list[int]:
+        raise RedisError("connection unavailable")
 
 
 def make_request(body: bytes = b'{"email":"owner@example.com"}') -> Request:
@@ -61,3 +67,11 @@ def test_auth_rate_limit_rejects_over_threshold(monkeypatch: pytest.MonkeyPatch)
         asyncio.run(dependency(make_request()))
     assert error.value.status_code == 429
     assert error.value.headers["Retry-After"] == "900"
+
+
+def test_auth_rate_limit_fails_closed_when_redis_is_down(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(rate_limit, "get_redis", lambda: BrokenRedis())
+    dependency = rate_limit.auth_rate_limit("login", ip_limit=30, ip_window=900)
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(dependency(make_request()))
+    assert error.value.status_code == 503
