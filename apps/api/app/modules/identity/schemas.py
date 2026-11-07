@@ -9,7 +9,10 @@ class RegisterRequest(BaseModel):
     @field_validator("full_name")
     @classmethod
     def trim_name(cls, value: str) -> str:
-        return value.strip()
+        value = value.strip()
+        if len(value) < 2:
+            raise ValueError("Full name must contain at least two characters")
+        return value
 
 
 class LoginRequest(BaseModel):
@@ -21,11 +24,25 @@ class RefreshRequest(BaseModel):
     refresh_token: str = Field(min_length=40, max_length=200)
 
 
+class PhoneOtpRequest(BaseModel):
+    phone_number: str = Field(pattern=r"^\+[1-9][0-9]{7,14}$")
+
+
+class PhoneOtpVerifyRequest(BaseModel):
+    challenge_id: str
+    code: str = Field(pattern=r"^[0-9]{6}$")
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
+
+
+class PhoneOtpAcceptedResponse(BaseModel):
+    status: str = "accepted"
+    challenge_id: str
 
 
 class UserResponse(BaseModel):

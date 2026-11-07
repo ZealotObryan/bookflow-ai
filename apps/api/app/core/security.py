@@ -5,6 +5,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import jwt
+from cryptography.fernet import Fernet
 from pwdlib import PasswordHash
 
 from app.core.config import get_settings
@@ -48,3 +49,13 @@ def new_otp() -> str:
 def hash_otp(phone: str, code: str) -> str:
     pepper = get_settings().otp_pepper.encode("utf-8")
     return hmac.new(pepper, f"{phone}:{code}".encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def encrypt_otp(code: str) -> str:
+    key = get_settings().otp_encryption_key.encode("ascii")
+    return Fernet(key).encrypt(code.encode("ascii")).decode("ascii")
+
+
+def decrypt_otp(ciphertext: str) -> str:
+    key = get_settings().otp_encryption_key.encode("ascii")
+    return Fernet(key).decrypt(ciphertext.encode("ascii")).decode("ascii")

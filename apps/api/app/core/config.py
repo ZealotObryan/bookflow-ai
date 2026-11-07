@@ -13,7 +13,11 @@ class Settings(BaseSettings):
     access_token_minutes: int = 15
     refresh_token_days: int = 30
     otp_pepper: str = "development-only-change-this-otp-pepper"
-    otp_delivery_provider: str = "unconfigured"
+    otp_encryption_key: str = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+    tumasend_api_key: str | None = None
+    tumasend_base_url: str = "https://gateway.tumasend.com"
+    tumasend_sms_sender_id: str | None = None
+    tumasend_webhook_secret: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../../.env"),
@@ -24,10 +28,14 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def require_production_secrets(self) -> "Settings":
         if self.environment.lower() == "production":
-            if self.jwt_secret_key.startswith("development-only") or len(self.jwt_secret_key) < 32:
-                raise ValueError("Production requires a strong JWT_SECRET_KEY of at least 32 characters")
-            if self.otp_pepper.startswith("development-only") or len(self.otp_pepper) < 32:
-                raise ValueError("Production requires a separate strong OTP_PEPPER of at least 32 characters")
+            secrets = {
+                "JWT_SECRET_KEY": self.jwt_secret_key,
+                "OTP_PEPPER": self.otp_pepper,
+                "OTP_ENCRYPTION_KEY": self.otp_encryption_key,
+            }
+            for name, value in secrets.items():
+                if value.startswith("development-only") or len(value) < 32:
+                    raise ValueError(f"Production requires a strong {name} of at least 32 characters")
         return self
 
 
