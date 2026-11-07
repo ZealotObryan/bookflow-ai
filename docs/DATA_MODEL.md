@@ -56,11 +56,11 @@ Subscription and platform billing entities will be added before paid self-servic
 ## 3. Scheduling decisions confirmed
 
 1. **No automatic employee assignment in the initial release.** Where a service requires an employee, the booking flow must collect or select a specific eligible employee. Automatic assignment is a later enhancement.
-2. **Multi-service appointments are supported.** A booking is the parent appointment and contains ordered booking items, each representing a service step. Items may be handled by different employees. The schedule is calculated from each item's actual interval rather than assuming one employee performs the entire appointment.
+2. **Multi-service appointments are supported.** A booking is the parent appointment and contains booking items, each representing a service step. Items may be handled by different employees and may run sequentially or simultaneously. Each item has its own start/end interval; the parent booking spans the earliest item start to the latest item end.
 3. **Shared resources are first-class schedulable capacity.** Rooms, chairs, beds and equipment can be required and allocated to service items. Employee and shared-resource conflicts use a common allocation model.
 4. **Availability is evaluated for every required allocation.** A service is not bookable unless its required employee capacity and shared-resource requirements can all be allocated for the requested interval.
 
-The initial customer flow should present a clear sequence of service steps. Whether overlapping/parallel service steps are allowed is intentionally left as a separate policy decision; do not assume parallel execution in the first booking workflow.
+Parallel/overlapping service steps are supported when the business allows them and all required employee and shared-resource allocations are available for each item's interval. The booking flow must make overlapping steps and the total appointment span clear to the customer.
 
 ## 4. Important relationships
 
@@ -89,10 +89,9 @@ PostgreSQL range/exclusion constraints may be used to prevent overlapping active
 
 ## 6. Remaining decisions before migrations
 
-1. Whether parallel/overlapping service steps are allowed, and under what business policy.
-2. How business-level capacity and group bookings are represented.
-3. Exact deposit, expiry and cancellation policy semantics.
-4. RLS rollout and transaction-scoped tenant context strategy.
-5. Whether resource requirements can be satisfied by any resource in a type/pool or must name a specific resource.
+1. How business-level capacity and group bookings are represented.
+2. Exact deposit, expiry and cancellation policy semantics.
+3. RLS rollout and transaction-scoped tenant context strategy.
+4. Whether resource requirements can be satisfied by any resource in a type/pool or must name a specific resource.
 
 Resolve these with concrete booking scenarios and tests before the first production schema migration.
