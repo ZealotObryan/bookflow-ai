@@ -92,6 +92,7 @@ def create_business(
     db.add(business)
     try:
         db.flush()
+        set_tenant_context(db, business.id)
         _audit(db, business_id=business.id, actor_id=user.id, action="business.created",
                target_type="business", target_id=str(business.id), metadata={"name": business.name})
         db.commit()
@@ -157,6 +158,7 @@ def create_invitation(
     db: Session = Depends(get_db),
 ) -> InvitationResponse:
     business, actor = require_roles(business_id, {"owner", "admin"}, user, db)
+    set_tenant_context(db, business.id)
     role = payload.role.casefold()
     if role not in INVITABLE_ROLES:
         raise HTTPException(status_code=422, detail="Invitation role must be admin, manager or staff")
@@ -249,6 +251,7 @@ def accept_invitation(
     business = db.get(Business, invitation.business_id)
     if business is None or business.status != "active":
         raise HTTPException(status_code=400, detail="Invitation is invalid or expired")
+    set_tenant_context(db, business.id)
     membership = db.scalar(
         select(BusinessMembership).where(
             BusinessMembership.business_id == invitation.business_id,
@@ -292,6 +295,7 @@ def update_member(
     db: Session = Depends(get_db),
 ) -> MemberResponse:
     business, actor = require_roles(business_id, {"owner", "admin"}, user, db)
+    set_tenant_context(db, business.id)
     target = db.scalar(
         select(BusinessMembership).where(
             BusinessMembership.id == membership_id,
