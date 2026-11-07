@@ -1,5 +1,13 @@
 from app.models.audit import AuditEvent
 from app.models.auth import AuthSession, AuthToken, PhoneOtpChallenge
+from app.models.booking import (
+    Booking,
+    BookingSegment,
+    BusinessWeeklyHours,
+    Customer,
+    EmployeeTimeOff,
+    EmployeeWeeklyHours,
+)
 from app.models.business import Business, BusinessMembership
 from app.models.catalog import (
     Employee,
@@ -8,17 +16,23 @@ from app.models.catalog import (
     ServiceEmployeeEligibility,
     ServiceResourceRequirement,
 )
-from app.models.booking import (\n    Booking,\n    BookingSegment,\n    BusinessWeeklyHours,\n    Customer,\n    EmployeeTimeOff,\n    EmployeeWeeklyHours,\n)\nfrom app.models.invitation import BusinessInvitation
+from app.models.invitation import BusinessInvitation
 from app.models.user import User
 
 __all__ = [
     "AuditEvent",
     "AuthSession",
     "AuthToken",
+    "Booking",
+    "BookingSegment",
     "Business",
-    "BusinessInvitation",\n    "Booking",\n    "BookingSegment",\n    "BusinessWeeklyHours",\n    "Customer",\n    "EmployeeTimeOff",\n    "EmployeeWeeklyHours",
+    "BusinessInvitation",
     "BusinessMembership",
+    "BusinessWeeklyHours",
+    "Customer",
     "Employee",
+    "EmployeeTimeOff",
+    "EmployeeWeeklyHours",
     "PhoneOtpChallenge",
     "SchedulableResource",
     "Service",

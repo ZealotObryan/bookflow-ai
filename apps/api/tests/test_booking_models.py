@@ -53,7 +53,7 @@ def test_booking_segments_are_tenant_scoped(db_session: Session) -> None:
     segment = BookingSegment(
         business_id=business.id, booking_id=booking.id, service_id=service.id,
         employee_id=employee.id, sequence_number=1,
-        starts_at="2026-11-10T08:00:00+00:00", ends_at="2026-11-10T08:30:00+00:00",
+        starts_at=datetime.fromisoformat("2026-11-10T08:00:00+00:00"), ends_at=datetime.fromisoformat("2026-11-10T08:30:00+00:00"),
         service_name_snapshot=service.name, duration_minutes_snapshot=service.duration_minutes,
         price_amount_snapshot=service.price_amount,
     )
@@ -74,7 +74,7 @@ def test_booking_cannot_reference_another_business_customer(db_session: Session)
     db_session.flush()
     booking = Booking(
         business_id=first.id, customer_id=customer.id, status="held",
-        starts_at="2026-11-10T08:00:00+00:00", ends_at="2026-11-10T08:30:00+00:00",
+        starts_at=datetime.fromisoformat("2026-11-10T08:00:00+00:00"), ends_at=datetime.fromisoformat("2026-11-10T08:30:00+00:00"),
         total_amount="0.00", currency="MWK",
     )
     db_session.add(booking)
@@ -95,7 +95,7 @@ def test_booking_segment_cannot_reference_cross_business_service(db_session: Ses
     db_session.flush()
     booking = Booking(
         business_id=first.id, customer_id=customer.id, status="held",
-        starts_at="2026-11-10T08:00:00+00:00", ends_at="2026-11-10T08:30:00+00:00",
+        starts_at=datetime.fromisoformat("2026-11-10T08:00:00+00:00"), ends_at=datetime.fromisoformat("2026-11-10T08:30:00+00:00"),
         total_amount="0.00", currency="MWK",
     )
     db_session.add(booking)
@@ -103,7 +103,7 @@ def test_booking_segment_cannot_reference_cross_business_service(db_session: Ses
     segment = BookingSegment(
         business_id=first.id, booking_id=booking.id, service_id=service.id,
         employee_id=None, sequence_number=1,
-        starts_at="2026-11-10T08:00:00+00:00", ends_at="2026-11-10T08:30:00+00:00",
+        starts_at=datetime.fromisoformat("2026-11-10T08:00:00+00:00"), ends_at=datetime.fromisoformat("2026-11-10T08:30:00+00:00"),
         service_name_snapshot=service.name, duration_minutes_snapshot=30,
         price_amount_snapshot="0.00",
     )
