@@ -21,3 +21,15 @@ The schema intentionally does not automatically assign employees. Booking reques
 3. Resource requirements are evaluated for every segment and resource capacity is enforced for overlapping intervals.
 4. PostgreSQL transactions, row-level locking and exclusion/constraint strategies must prevent concurrent requests from double-booking employees or resources.
 5. Tenant context is transaction-local and database RLS must be forced for operational tenant tables before release.
+
+
+## Booking and availability foundation
+
+- Customers are scoped to a business and are not global contacts by default.
+- Business and employee weekly hours use the business's configured timezone for interpreting local wall-clock hours. Store actual booking and time-off instants as timezone-aware timestamps.
+- Employee time off is an explicit UTC interval.
+- A booking is the customer-facing appointment container. A booking may contain multiple ordered service segments, each with its own service, employee, start/end time and immutable service/price snapshots.
+- Composite foreign keys prevent a booking or segment from referencing a customer, service, employee or booking in another tenant.
+- A PostgreSQL GiST exclusion constraint prevents overlapping active segments assigned to the same employee, including concurrent booking attempts.
+- Resource capacity greater than one must be checked while holding a row lock on the resource in the booking transaction. A booking is not considered confirmed until all segment, employee and resource checks commit atomically.
+- Holds expire through a scheduled cleanup process. Expired holds must be transitioned to expired/cancelled segment states before their employee reservations are released.

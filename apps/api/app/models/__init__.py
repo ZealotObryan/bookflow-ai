@@ -8,7 +8,7 @@ from app.models.catalog import (
     ServiceEmployeeEligibility,
     ServiceResourceRequirement,
 )
-from app.models.invitation import BusinessInvitation
+from app.models.booking import (\n    Booking,\n    BookingSegment,\n    BusinessWeeklyHours,\n    Customer,\n    EmployeeTimeOff,\n    EmployeeWeeklyHours,\n)\nfrom app.models.invitation import BusinessInvitation
 from app.models.user import User
 
 __all__ = [
@@ -16,7 +16,7 @@ __all__ = [
     "AuthSession",
     "AuthToken",
     "Business",
-    "BusinessInvitation",
+    "BusinessInvitation",\n    "Booking",\n    "BookingSegment",\n    "BusinessWeeklyHours",\n    "Customer",\n    "EmployeeTimeOff",\n    "EmployeeWeeklyHours",
     "BusinessMembership",
     "Employee",
     "PhoneOtpChallenge",
