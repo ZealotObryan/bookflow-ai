@@ -108,8 +108,8 @@ def _send_otp(challenge: PhoneOtpChallenge, code: str, db: Session) -> None:
         f"Your BookFlow AI verification code is {code}. "
         f"It expires in {OTP_LIFETIME_MINUTES} minutes. Do not share this code."
     )
-    client = _tumasend()
     try:
+        client = _tumasend()
         challenge.whatsapp_batch_id = client.send_whatsapp(challenge.phone_e164, message)
         challenge.delivery_status = "whatsapp_queued"
         db.commit()
@@ -119,6 +119,7 @@ def _send_otp(challenge: PhoneOtpChallenge, code: str, db: Session) -> None:
         pass
 
     try:
+        client = _tumasend()
         challenge.sms_batch_id = client.send_sms(challenge.phone_e164, message)
         challenge.delivery_status = "sms_queued"
         db.commit()
@@ -402,6 +403,8 @@ async def tumasend_webhook(request: Request, db: Session = Depends(get_db)) -> d
             and challenge.expires_at > datetime.now(UTC)
         ):
             try:
+                if not challenge.code_ciphertext:
+                    raise InvalidToken
                 code = decrypt_otp(challenge.code_ciphertext)
                 message = (
                     f"Your BookFlow AI verification code is {code}. "

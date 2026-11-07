@@ -39,7 +39,7 @@ class PhoneOtpChallenge(Base):
     phone_e164: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
     purpose: Mapped[str] = mapped_column(String(16), nullable=False)
     code_hash: Mapped[str] = mapped_column(String(64), nullable=False)
-    code_ciphertext: Mapped[str] = mapped_column(String(255), nullable=False)
+    code_ciphertext: Mapped[str | None] = mapped_column(String(255), nullable=True)
     whatsapp_batch_id: Mapped[str | None] = mapped_column(String(80), nullable=True, unique=True)
     sms_batch_id: Mapped[str | None] = mapped_column(String(80), nullable=True, unique=True)
     delivery_status: Mapped[str] = mapped_column(

@@ -41,17 +41,29 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-## Authentication foundation
+## Authentication
 
-The API now has email/password registration and login, short-lived JWT access tokens, opaque rotating refresh tokens, session revocation, and an authenticated `/auth/me` endpoint under `/api/v1`.
+The API provides email/password registration and login, short-lived JWT access tokens, opaque rotating refresh tokens, session revocation, and an authenticated `/auth/me` endpoint.
 
-- Passwords are hashed with Argon2 through `pwdlib`; plaintext passwords are never stored.
-- Refresh tokens are stored only as SHA-256 hashes and are rotated on refresh.
-- Access tokens are checked against the server-side session record, allowing logout/revocation to take effect immediately.
-- Phone number fields and OTP challenge storage are included in the schema. Phone OTP delivery and verification are **not active yet**: an SMS/WhatsApp provider must be selected and its adapter implemented before those endpoints can be enabled.
-- Email verification delivery is also pending. Registration currently creates an unverified account; production onboarding must add email verification and abuse controls.
-- Public endpoints need distributed rate limiting (preferably Redis-backed) before internet exposure.
-- Set strong, independent `JWT_SECRET_KEY` and `OTP_PEPPER` values in every deployed environment. The example values are development-only.
+- Passwords use Argon2 hashing; plaintext passwords are never stored.
+- Refresh tokens are stored only as SHA-256 hashes and rotate on use.
+- Access tokens are checked against server-side sessions so logout/revocation takes effect immediately.
+- Phone login is available only after a user has linked and verified their phone number from an authenticated account.
+- OTP codes expire after five minutes and are limited to five verification attempts.
+- OTP hashes use an HMAC pepper. The temporary code is encrypted at rest so it can be re-sent through SMS if WhatsApp delivery fails.
+- TumaSend is the initial messaging adapter. It sends WhatsApp first, falls back to SMS if the WhatsApp send request fails, and also falls back to SMS when a signed `message.failed` webhook is received for a queued WhatsApp message.
+- A successful send API response means queued, not delivered. Delivery status is updated from signed TumaSend webhooks.
+- TumaSend credentials and sender IDs are not included in the repository. Configure `TUMASEND_API_KEY`, `TUMASEND_SMS_SENDER_ID`, and `TUMASEND_WEBHOOK_SECRET` in the local environment or secret manager.
+- TumaSend requires an approved business account and a sender ID for SMS. Validate WhatsApp template/policy requirements, account KYC, pricing, and real +265 delivery in sandbox/pilot testing before production.
+- Email verification delivery, distributed rate limiting, and broader audit logging remain pending.
+
+Generate a unique Fernet key for each environment:
+
+```bash
+uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Set the result as `OTP_ENCRYPTION_KEY`. Also generate independent, high-entropy `JWT_SECRET_KEY` and `OTP_PEPPER` values. Never reuse the sample development values in a deployed environment.
 
 ## Quality checks
 
