@@ -41,7 +41,7 @@ def new_refresh_token() -> str:
 
 
 def hash_refresh_token(token: str) -> str:
-    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 def new_otp() -> str:
