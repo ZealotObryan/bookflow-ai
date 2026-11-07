@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.security import hash_refresh_token
-from app.db.session import get_db
+from app.db.session import get_db, set_tenant_context
 from app.integrations.email import EmailDeliveryError, send_transactional_email
 from app.models import (
     AuditEvent,

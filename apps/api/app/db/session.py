@@ -36,3 +36,15 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+def set_tenant_context(db: Session, business_id) -> None:
+    """Set PostgreSQL RLS context for the current transaction only."""
+    if db.get_bind().dialect.name != "postgresql":
+        return
+    from sqlalchemy import text
+
+    db.execute(
+        text("SELECT set_config('app.current_business_id', :business_id, true)"),
+        {"business_id": str(business_id)},
+    )
