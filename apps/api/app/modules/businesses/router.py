@@ -202,6 +202,18 @@ def create_invitation(
             f"{get_settings().frontend_base_url.rstrip('/')}/invitations/accept"
             f"#token={raw_token}"
         )
+        _audit(db, business_id=business_id, actor_id=user.id, action="membership.invitation_created",
+               target_type="invitation", target_id=str(invitation.id),
+               metadata={"role": role, "email": email})
+        # Commit the invitation before sending mail. This avoids sending a link
+        # for a transaction that later rolls back.
+        db.commit()
+        db.refresh(invitation)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Invitation could not be created") from None
+
+    try:
         send_transactional_email(
             recipient=email,
             subject=f"Invitation to join {business.name} on BookFlow AI",
@@ -212,17 +224,11 @@ def create_invitation(
                 "This invitation expires in 72 hours and can only be used once."
             ),
         )
-        _audit(db, business_id=business_id, actor_id=user.id, action="membership.invitation_created",
-               target_type="invitation", target_id=str(invitation.id),
-               metadata={"role": role, "email": email})
-        db.commit()
-        db.refresh(invitation)
     except EmailDeliveryError:
-        db.rollback()
+        # Do not leave a valid invitation behind when delivery definitively fails.
+        invitation.revoked_at = datetime.now(UTC)
+        db.commit()
         raise HTTPException(status_code=503, detail="Invitation email could not be delivered") from None
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Invitation could not be created") from None
     return InvitationResponse(id=invitation.id, email=email, role=role,
                               expires_at=invitation.expires_at, status="pending")
 
