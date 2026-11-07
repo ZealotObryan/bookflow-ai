@@ -5,6 +5,7 @@ import logging
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urlsplit
 
 import jwt
 from cryptography.fernet import InvalidToken
@@ -13,7 +14,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from urllib.parse import urlsplit
 
 from app.core.config import get_settings
 from app.core.rate_limit import auth_rate_limit
