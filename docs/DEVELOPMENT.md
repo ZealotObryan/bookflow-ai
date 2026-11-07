@@ -21,7 +21,7 @@ From the repository root:
 
 ```bash
 cp .env.example .env
-docker compose up -d db
+docker compose up -d db redis
 ```
 
 ## Start the web app
@@ -41,21 +41,27 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-## Authentication
+## Authentication security controls
 
-The API provides email/password registration and login, short-lived JWT access tokens, opaque rotating refresh tokens, session revocation, and an authenticated `/auth/me` endpoint.
+- Passwords are hashed with Argon2id; raw passwords are never persisted.
+- Login uses a dummy Argon2 verification for unknown email addresses and returns the same error for unknown, disabled and incorrect-password accounts.
+- Authentication endpoints use Redis-backed, atomic, distributed IP and identifier rate limits. If Redis is unavailable, authentication requests fail closed with HTTP 503 rather than silently disabling throttling.
+- Access JWTs are limited to ten minutes and validate the configured algorithm, issuer and audience.
+- Refresh tokens are opaque, high-entropy, SHA-256 hashed in storage, rotated at use and revoked server-side.
+- Reuse of a previously rotated refresh token revokes the user's remaining active sessions as a suspected token replay.
+- Server-side sessions enforce a 12-hour idle timeout and a 30-day absolute lifetime.
+- Password changes require the current password and revoke every active session.
+- Users can revoke all sessions with `POST /api/v1/auth/logout-all`.
+- Security headers prevent framing, MIME sniffing, referrer leakage and caching of API responses.
+- Phone OTPs expire after five minutes, allow at most five attempts, and are protected by Redis rate limits. OTP hashes use an HMAC pepper; temporary encrypted values are cleared when a challenge is consumed or expires through the cleanup process.
+- TumaSend uses separate asset-scoped WhatsApp and SMS credentials. WhatsApp is attempted first; SMS fallback uses the same code.
+- TumaSend webhooks must pass HMAC signature verification before affecting delivery state.
 
-- Passwords use Argon2 hashing; plaintext passwords are never stored.
-- Refresh tokens are stored only as SHA-256 hashes and rotate on use.
-- Access tokens are checked against server-side sessions so logout/revocation takes effect immediately.
-- Phone login is available only after a user has linked and verified their phone number from an authenticated account.
-- OTP codes expire after five minutes and are limited to five verification attempts.
-- OTP hashes use an HMAC pepper. The temporary code is encrypted at rest so it can be re-sent through SMS if WhatsApp delivery fails.
-- TumaSend is the initial messaging adapter. It sends WhatsApp first, falls back to SMS if the WhatsApp send request fails, and also falls back to SMS when a signed `message.failed` webhook is received for a queued WhatsApp message.
-- A successful send API response means queued, not delivered. Delivery status is updated from signed TumaSend webhooks.
-- TumaSend credentials and sender IDs are not included in the repository. Configure separate asset-scoped `TUMASEND_WHATSAPP_API_KEY` and `TUMASEND_SMS_API_KEY`, plus `TUMASEND_SMS_SENDER_ID` and `TUMASEND_WEBHOOK_SECRET`, in the local environment or secret manager.
-- TumaSend requires an approved business account and a sender ID for SMS. Validate WhatsApp template/policy requirements, account KYC, pricing, and real +265 delivery in sandbox/pilot testing before production.
-- Email verification delivery, distributed rate limiting, and broader audit logging remain pending.
+## Local Redis
+
+Redis is required for authentication throttling. The API deliberately fails closed if it cannot connect to Redis. Do not change this to an in-memory production fallback: it would allow limits to be bypassed across workers and restarts.
+
+## Secrets
 
 Generate a unique Fernet key for each environment:
 
@@ -63,7 +69,7 @@ Generate a unique Fernet key for each environment:
 uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-Set the result as `OTP_ENCRYPTION_KEY`. Also generate independent, high-entropy `JWT_SECRET_KEY` and `OTP_PEPPER` values. Never reuse the sample development values in a deployed environment.
+Generate independent high-entropy values for `JWT_SECRET_KEY` and `OTP_PEPPER`. Never reuse development placeholders in any shared environment. Store provider keys and secrets in a secret manager, not in Git.
 
 ## Quality checks
 
@@ -90,9 +96,12 @@ npm run build
 - Never edit an already-applied migration; add a new migration instead.
 - Keep tenant-aware foreign keys, uniqueness and conflict constraints in the database wherever appropriate.
 
-## Security
+## Security release gate
+
+Before any production launch, complete email verification and password recovery delivery, test Redis and PostgreSQL under concurrency, verify provider webhooks against captured real payloads, configure HTTPS and trusted proxy handling, run dependency and static analysis scans, and perform an independent security review. Do not describe the system as production-ready until these checks pass.
+
+## General security
 
 - Never commit real `.env` files, API keys, OAuth tokens, passwords or customer data.
-- Keep secrets in local environment variables or a managed secret store.
 - Validate tenant membership and authorization in backend application services; never trust tenant IDs supplied by the browser.
 - Record security-sensitive actions in audit logs.

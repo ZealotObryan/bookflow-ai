@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -8,11 +9,12 @@ import jwt
 from cryptography.fernet import InvalidToken
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.rate_limit import auth_rate_limit
 from app.core.security import (
     create_access_token,
     decrypt_otp,
@@ -28,6 +30,7 @@ from app.db.session import get_db
 from app.integrations.tumasend import TumaSendClient, TumaSendError
 from app.models import AuthSession, PhoneOtpChallenge, User
 from app.modules.identity.schemas import (
+    ChangePasswordRequest,
     LoginRequest,
     PhoneOtpAcceptedResponse,
     PhoneOtpRequest,
@@ -42,6 +45,8 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 bearer = HTTPBearer(auto_error=False)
 OTP_LIFETIME_MINUTES = 5
 OTP_MAX_ATTEMPTS = 5
+# Equal-cost password verification for unknown email addresses reduces account enumeration by timing.
+_DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
 
 
 def _issue_session(db: Session, user: User) -> TokenResponse:
@@ -62,35 +67,54 @@ def _issue_session(db: Session, user: User) -> TokenResponse:
     )
 
 
+def _decode_access_token(token: str) -> dict:
+    settings = get_settings()
+    return jwt.decode(
+        token,
+        settings.jwt_secret_key,
+        algorithms=[settings.jwt_algorithm],
+        issuer=settings.jwt_issuer,
+        audience=settings.jwt_audience,
+        options={"require": ["exp", "iat", "sub", "sid", "iss", "aud", "jti"]},
+    )
+
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     db: Session = Depends(get_db),
 ) -> User:
     if credentials is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+        raise HTTPException(status_code=401, detail="Authentication required")
     try:
-        payload = jwt.decode(
-            credentials.credentials,
-            get_settings().jwt_secret_key,
-            algorithms=[get_settings().jwt_algorithm],
-            options={"require": ["exp", "iat", "sub", "sid"]},
-        )
+        payload = _decode_access_token(credentials.credentials)
         user_id = uuid.UUID(payload["sub"])
         session_id = uuid.UUID(payload["sid"])
     except (jwt.InvalidTokenError, KeyError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid or expired access token") from None
 
+    now = datetime.now(UTC)
     session = db.scalar(
         select(AuthSession).where(
             AuthSession.id == session_id,
             AuthSession.user_id == user_id,
             AuthSession.revoked_at.is_(None),
-            AuthSession.expires_at > datetime.now(UTC),
-        )
+            AuthSession.expires_at > now,
+        ).with_for_update()
     )
     user = db.get(User, user_id)
     if session is None or user is None or not user.is_active:
         raise HTTPException(status_code=401, detail="Session is no longer valid")
+
+    idle_anchor = session.last_used_at or session.created_at
+    idle_limit = timedelta(minutes=get_settings().session_idle_timeout_minutes)
+    if idle_anchor < now - idle_limit:
+        session.revoked_at = now
+        db.commit()
+        raise HTTPException(status_code=401, detail="Session expired due to inactivity")
+
+    # The server, not the browser, controls the idle timeout.
+    session.last_used_at = now
+    db.commit()
     return user
 
 
@@ -116,7 +140,6 @@ def _send_otp(challenge: PhoneOtpChallenge, code: str, db: Session) -> None:
         db.commit()
         return
     except TumaSendError:
-        # An explicit API/transport failure triggers immediate SMS fallback.
         pass
 
     try:
@@ -126,6 +149,7 @@ def _send_otp(challenge: PhoneOtpChallenge, code: str, db: Session) -> None:
         db.commit()
     except TumaSendError:
         challenge.delivery_status = "delivery_failed"
+        challenge.code_ciphertext = None
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -142,11 +166,13 @@ def _create_challenge(
 ) -> PhoneOtpAcceptedResponse:
     now = datetime.now(UTC)
     previous = db.scalars(
-        select(PhoneOtpChallenge).where(
+        select(PhoneOtpChallenge)
+        .where(
             PhoneOtpChallenge.phone_e164 == phone_number,
             PhoneOtpChallenge.purpose == purpose,
             PhoneOtpChallenge.consumed_at.is_(None),
         )
+        .with_for_update()
     ).all()
     for challenge in previous:
         challenge.consumed_at = now
@@ -193,7 +219,7 @@ def _verify_code(
         or challenge.consumed_at is not None
         or challenge.expires_at <= now
         or challenge.attempts >= OTP_MAX_ATTEMPTS
-        or challenge.delivery_status in {"pending", "delivery_failed"}
+        or challenge.delivery_status in {"pending", "delivery_failed", "sms_failed"}
     ):
         raise HTTPException(status_code=400, detail="Invalid or expired verification code")
 
@@ -217,9 +243,14 @@ def _verify_code(
     return challenge, user
 
 
-@router.post("/register", response_model=TokenResponse, status_code=201)
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    status_code=201,
+    dependencies=[Depends(auth_rate_limit("register", ip_limit=5, ip_window=3600))],
+)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
-    normalized = str(payload.email).strip().lower()
+    normalized = str(payload.email).strip().casefold()
     user = User(
         email=normalized,
         email_normalized=normalized,
@@ -234,39 +265,69 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenRe
         return tokens
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="An account with this email already exists") from None
+        # Avoid confirming that an email address already has an account.
+        raise HTTPException(
+            status_code=202,
+            detail="If this email can be registered, the next steps will be sent to its owner.",
+        ) from None
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    dependencies=[
+        Depends(auth_rate_limit("login", ip_limit=30, ip_window=900, identifier_limit=5, identifier_window=900, identifier_field="email"))
+    ],
+)
 def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
-    normalized = str(payload.email).strip().lower()
+    normalized = str(payload.email).strip().casefold()
     user = db.scalar(select(User).where(User.email_normalized == normalized))
-    if user is None or user.password_hash is None or not verify_password(payload.password, user.password_hash):
+    password_hash = user.password_hash if user is not None and user.password_hash else _DUMMY_PASSWORD_HASH
+    password_valid = verify_password(payload.password, password_hash)
+    if user is None or not password_valid or not user.is_active:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="This account is disabled")
     tokens = _issue_session(db, user)
     db.commit()
     return tokens
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    dependencies=[Depends(auth_rate_limit("refresh", ip_limit=30, ip_window=900))],
+)
 def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> TokenResponse:
     token_hash = hash_refresh_token(payload.refresh_token)
     session = db.scalar(
-        select(AuthSession).where(
-            AuthSession.refresh_token_hash == token_hash,
-            AuthSession.revoked_at.is_(None),
-            AuthSession.expires_at > datetime.now(UTC),
-        ).with_for_update()
+        select(AuthSession)
+        .where(AuthSession.refresh_token_hash == token_hash)
+        .with_for_update()
     )
+    now = datetime.now(UTC)
     if session is None:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    if session.revoked_at is not None:
+        # A rotated refresh token was presented again: treat this as possible token theft.
+        db.execute(
+            update(AuthSession)
+            .where(AuthSession.user_id == session.user_id, AuthSession.revoked_at.is_(None))
+            .values(revoked_at=now)
+        )
+        db.commit()
+        raise HTTPException(status_code=401, detail="Session security check failed; please sign in again")
+    if session.expires_at <= now:
+        session.revoked_at = now
+        db.commit()
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
     user = db.get(User, session.user_id)
     if user is None or not user.is_active:
+        session.revoked_at = now
+        db.commit()
         raise HTTPException(status_code=401, detail="Account is unavailable")
-    session.revoked_at = datetime.now(UTC)
-    session.last_used_at = datetime.now(UTC)
+
+    session.revoked_at = now
+    session.last_used_at = now
     tokens = _issue_session(db, user)
     db.commit()
     return tokens
@@ -280,15 +341,44 @@ def logout(
 ) -> None:
     if credentials is None:
         raise HTTPException(status_code=401, detail="Authentication required")
-    payload = jwt.decode(
-        credentials.credentials,
-        get_settings().jwt_secret_key,
-        algorithms=[get_settings().jwt_algorithm],
-    )
+    try:
+        payload = _decode_access_token(credentials.credentials)
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid access token") from None
     session = db.get(AuthSession, uuid.UUID(payload["sid"]))
     if session is not None and session.user_id == user.id and session.revoked_at is None:
         session.revoked_at = datetime.now(UTC)
         db.commit()
+
+
+@router.post("/logout-all", status_code=204)
+def logout_all(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> None:
+    db.execute(
+        update(AuthSession)
+        .where(AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None))
+        .values(revoked_at=datetime.now(UTC))
+    )
+    db.commit()
+
+
+@router.post("/password/change", status_code=204)
+def change_password(
+    payload: ChangePasswordRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    if user.password_hash is None or not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if payload.current_password == payload.new_password:
+        raise HTTPException(status_code=400, detail="Choose a password different from your current password")
+    user.password_hash = hash_password(payload.new_password)
+    now = datetime.now(UTC)
+    db.execute(
+        update(AuthSession)
+        .where(AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None))
+        .values(revoked_at=now)
+    )
+    db.commit()
 
 
 @router.get("/me", response_model=UserResponse)
@@ -303,7 +393,14 @@ def me(user: User = Depends(get_current_user)) -> UserResponse:
     )
 
 
-@router.post("/phone/request-code", response_model=PhoneOtpAcceptedResponse, status_code=202)
+@router.post(
+    "/phone/request-code",
+    response_model=PhoneOtpAcceptedResponse,
+    status_code=202,
+    dependencies=[
+        Depends(auth_rate_limit("phone-request", ip_limit=10, ip_window=900, identifier_limit=3, identifier_window=900, identifier_field="phone_number"))
+    ],
+)
 def request_phone_code(payload: PhoneOtpRequest, db: Session = Depends(get_db)) -> PhoneOtpAcceptedResponse:
     user = db.scalar(
         select(User).where(
@@ -312,13 +409,16 @@ def request_phone_code(payload: PhoneOtpRequest, db: Session = Depends(get_db)) 
             User.is_active.is_(True),
         )
     )
-    # Avoid revealing whether a phone number is registered.
     if user is None:
         return PhoneOtpAcceptedResponse(challenge_id=str(uuid.uuid4()))
     return _create_challenge(db=db, user=user, phone_number=payload.phone_number, purpose="login")
 
 
-@router.post("/phone/verify-code", response_model=TokenResponse)
+@router.post(
+    "/phone/verify-code",
+    response_model=TokenResponse,
+    dependencies=[Depends(auth_rate_limit("phone-verify", ip_limit=15, ip_window=900, identifier_limit=5, identifier_window=900, identifier_field="challenge_id"))],
+)
 def verify_phone_code(payload: PhoneOtpVerifyRequest, db: Session = Depends(get_db)) -> TokenResponse:
     _, user = _verify_code(db=db, payload=payload, purpose="login")
     tokens = _issue_session(db, user)
@@ -326,7 +426,14 @@ def verify_phone_code(payload: PhoneOtpVerifyRequest, db: Session = Depends(get_
     return tokens
 
 
-@router.post("/phone/link/request-code", response_model=PhoneOtpAcceptedResponse, status_code=202)
+@router.post(
+    "/phone/link/request-code",
+    response_model=PhoneOtpAcceptedResponse,
+    status_code=202,
+    dependencies=[
+        Depends(auth_rate_limit("phone-link", ip_limit=10, ip_window=900, identifier_limit=3, identifier_window=900, identifier_field="phone_number"))
+    ],
+)
 def request_phone_link_code(
     payload: PhoneOtpRequest,
     user: User = Depends(get_current_user),
@@ -340,7 +447,11 @@ def request_phone_link_code(
     return _create_challenge(db=db, user=user, phone_number=payload.phone_number, purpose="link")
 
 
-@router.post("/phone/link/verify-code", response_model=UserResponse)
+@router.post(
+    "/phone/link/verify-code",
+    response_model=UserResponse,
+    dependencies=[Depends(auth_rate_limit("phone-link-verify", ip_limit=15, ip_window=900, identifier_limit=5, identifier_window=900, identifier_field="challenge_id"))],
+)
 def verify_phone_link_code(
     payload: PhoneOtpVerifyRequest,
     user: User = Depends(get_current_user),
@@ -427,6 +538,7 @@ async def tumasend_webhook(request: Request, db: Session = Depends(get_db)) -> d
 
     if event_type == "message.failed":
         challenge.delivery_status = "delivery_failed"
+        challenge.code_ciphertext = None
         db.commit()
         return {"status": "recorded"}
 

@@ -30,6 +30,8 @@ def create_access_token(user_id: uuid.UUID, session_id: uuid.UUID) -> str:
         "iat": now,
         "exp": now + timedelta(minutes=settings.access_token_minutes),
         "jti": str(uuid.uuid4()),
+        "iss": settings.jwt_issuer,
+        "aud": settings.jwt_audience,
     }
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
