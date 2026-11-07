@@ -96,7 +96,7 @@ uv run ruff check .
 uv run alembic upgrade head
 ```
 
-GitHub Actions runs lint, unit tests and PostgreSQL migration checks for API changes on the development branch and pull requests.
+GitHub Actions is configured to run lint, unit tests and PostgreSQL migration checks for API changes on the development branch and pull requests. Confirm a successful run before treating a change as validated.
 
 ## Security release gate
 

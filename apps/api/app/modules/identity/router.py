@@ -346,6 +346,9 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Message
         except IntegrityError:
             db.rollback()
             user = db.scalar(select(User).where(User.email_normalized == normalized))
+    else:
+        # Match the expensive password-hash work performed for a new registration.
+        hash_password(payload.password)
     if user is not None and user.email_verified_at is None and user.is_active:
         _request_auth_email(user, EMAIL_VERIFICATION_PURPOSE, db)
     return MessageResponse(message="If the address can be registered, a verification email will be sent.")
