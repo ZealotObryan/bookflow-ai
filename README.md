@@ -18,7 +18,7 @@ The initial market is Malawi, with a design that supports expansion across Afric
 
 - Web: Next.js, React and TypeScript
 - API: Python and FastAPI
-- Data: PostgreSQL (schema and migrations are the next backend milestone)
+- Data: PostgreSQL, SQLAlchemy and Alembic
 - Background work: a durable worker/queue when asynchronous workflows are introduced
 - Integrations: Meta WhatsApp Business Platform, Google Calendar and payment-provider adapters
 - AI: tool-calling model behind validated backend operations
@@ -30,10 +30,9 @@ The first release is a **modular monolith**, not a collection of microservices.
 ```text
 apps/
   web/       Next.js dashboard (Vercel root directory)
-  api/       FastAPI application
+  api/       FastAPI application and migrations
 docs/
   decisions/ architecture decision records
-infrastructure/
 docker-compose.yml
 ```
 
@@ -45,7 +44,18 @@ docker-compose.yml
 - npm 10+
 - Python 3.12+
 - uv
-- Docker Desktop or Docker Engine with Compose
+- Docker Engine/Desktop with Compose
+
+### Configure environment and PostgreSQL
+
+From the repository root:
+
+```bash
+cp .env.example .env
+docker compose up -d db
+```
+
+The local PostgreSQL instance is exposed on port 5432 by default. Change the example password before using this setup beyond a disposable local environment.
 
 ### Web application
 
@@ -57,35 +67,26 @@ npm run dev
 
 Open http://localhost:3000.
 
-### API
+### API and database migrations
 
 ```bash
 cd apps/api
 uv sync
+uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
 - Health check: http://localhost:8000/health
 - API docs: http://localhost:8000/docs
 
-Run backend tests:
+Run backend checks:
 
 ```bash
-cd apps/api
 uv run pytest
 uv run ruff check .
 ```
 
-### Local PostgreSQL
-
-From the repository root:
-
-```bash
-cp .env.example .env
-docker compose up -d db
-```
-
-The local database is exposed on port 5432 by default. The application does not connect to it yet; database configuration, SQLAlchemy models and Alembic migrations are part of the next milestone. Change the example password before using this setup beyond a disposable local environment.
+The first migration creates users, businesses and business memberships. It does not yet create booking or payment tables.
 
 ## Engineering principles
 
@@ -107,4 +108,4 @@ The local database is exposed on port 5432 by default. The application does not 
 
 ## Status
 
-Initial application scaffolding is in progress. No production deployment is active.
+Application scaffolding and the first identity/tenancy database migration are in progress. No production deployment is active.

@@ -9,7 +9,7 @@ app = FastAPI(
 
 @app.get("/health", tags=["Operations"])
 async def health_check() -> dict[str, str]:
-    """Return process health; dependency health checks will be added separately."""
+    """Return process health without depending on external services."""
     return {"status": "ok", "service": "bookflow-api"}
 
 

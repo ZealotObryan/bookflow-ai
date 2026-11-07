@@ -1,48 +1,74 @@
-# BookFlow AI — Development Guide
+# Development Workflow
 
-## 1. Local prerequisites
+## Branching and deployment safety
 
-Install:
+- `main` is the protected release branch.
+- Feature work is committed to `development` or short-lived feature branches.
+- Do not merge into `main`, enable production deployment, or change production resources without explicit approval.
+- Vercel automatic builds are currently paused while the application foundation is being established.
+- Use pull requests for review before release.
 
-- Git
-- Node.js LTS and pnpm
-- Python 3.12+ and uv
+## Local prerequisites
+
+- Node.js 22 or newer and npm 10 or newer
+- Python 3.12 or newer
+- uv
 - Docker Engine/Desktop with Compose
-- VS Code or another editor
-- Postman or Bruno for API testing
 
-Pin exact runtime and dependency versions in the project files when scaffolding begins. Do not assume the Vercel Node runtime setting is the local development version.
+## Start local dependencies
 
-## 2. Repository conventions
+From the repository root:
 
-- Keep the monorepo layout documented in the root README.
-- Use feature branches for substantial work and reviewable pull requests.
-- Write focused commits with imperative messages.
-- Keep secrets in local environment files ignored by Git; commit only safe placeholders in `.env.example`.
-- Use migrations for all schema changes.
-- Add tests with each domain behavior.
-- Update documentation when architecture or API behavior changes.
+```bash
+cp .env.example .env
+docker compose up -d db
+```
 
-## 3. Local services
+## Start the web app
 
-Docker Compose will provide local PostgreSQL and, when needed, Redis. Local development must work without production credentials. External integrations should use clearly labelled test/sandbox configurations; do not silently substitute mocks in production paths.
+```bash
+cd apps/web
+npm install
+npm run dev
+```
 
-## 4. Quality gates
+## Start the API
 
-Before a change is considered complete:
+```bash
+cd apps/api
+uv sync
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload --port 8000
+```
 
-- Formatting and lint checks pass.
-- Static typing checks pass where configured.
-- Unit and integration tests pass.
-- Database migrations apply cleanly to a fresh database.
-- Tenant-isolation and authorization tests cover affected operations.
-- No secrets, personal customer data or provider credentials are committed.
-- Relevant docs and environment examples are current.
+## Quality checks
 
-## 5. Environment configuration
+From `apps/api`:
 
-Use environment variables validated at application startup. Maintain separate local, test, preview and production configuration. Never commit real API keys, OAuth secrets, database URLs or signing secrets.
+```bash
+uv run pytest
+uv run ruff check .
+```
 
-## 6. Milestone completion
+From `apps/web`:
 
-Each milestone records its objective, implementation, acceptance criteria, tests, documentation, known risks and remaining work. Production deployment requires a separate review and explicit approval.
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
+## Database changes
+
+- Update SQLAlchemy models first.
+- Generate or author an Alembic migration and review it before applying.
+- Test upgrade and downgrade behavior against PostgreSQL.
+- Never edit an already-applied migration; add a new migration instead.
+- Keep tenant-aware foreign keys, uniqueness and conflict constraints in the database wherever appropriate.
+
+## Security
+
+- Never commit real `.env` files, API keys, OAuth tokens, passwords or customer data.
+- Keep secrets in local environment variables or a managed secret store.
+- Validate tenant membership and authorization in backend application services; never trust tenant IDs supplied by the browser.
+- Record security-sensitive actions in audit logs.
