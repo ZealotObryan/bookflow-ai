@@ -63,10 +63,14 @@ class Settings(BaseSettings):
             }
             placeholders = ("development-only", "replace-with", "change-this", "example")
             for name, value in secrets.items():
-                if len(value) < 32 or value.lower().startswith(placeholders):
+                is_sample_fernet = (
+                    name == "OTP_ENCRYPTION_KEY"
+                    and value == "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+                )
+                if len(value) < 32 or value.lower().startswith(placeholders) or is_sample_fernet:
                     raise ValueError(f"Production requires a unique high-entropy {name}")
-            if not self.redis_url.startswith("rediss://"):
-                raise ValueError("Production REDIS_URL must use TLS (rediss://)")
+            if not self.redis_url.startswith("rediss://") or "@" not in self.redis_url:
+                raise ValueError("Production REDIS_URL must use TLS and authenticated Redis credentials")
             if "sslmode=require" not in self.database_url and "sslmode=verify-full" not in self.database_url:
                 raise ValueError("Production DATABASE_URL must enforce PostgreSQL TLS")
             if not self.frontend_base_url.startswith("https://"):

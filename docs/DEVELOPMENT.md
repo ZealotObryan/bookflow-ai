@@ -36,7 +36,7 @@ npm run dev
 
 ```bash
 cd apps/api
-uv sync
+uv sync --group dev
 uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -54,19 +54,27 @@ uv run uvicorn app.main:app --reload --port 8000
 - Server-side sessions enforce a 12-hour idle timeout and a 30-day absolute lifetime.
 - Password changes require the current password and revoke all sessions. Users can also revoke all sessions explicitly.
 - Security headers prevent framing, MIME sniffing, referrer leakage and caching of API responses.
-- Phone OTPs expire after five minutes, allow at most five attempts, and are protected by distributed rate limits. OTP hashes use an HMAC pepper; temporary encrypted values are cleared after delivery/consumption or when replaced.
-- TumaSend uses separate asset-scoped WhatsApp and SMS credentials. WhatsApp is attempted first; SMS fallback reuses the same code.
-- TumaSend webhooks must pass HMAC signature verification before affecting delivery state.
+- Phone OTPs expire after five minutes, allow at most five attempts, and are protected by distributed rate limits. OTP hashes use an HMAC pepper; encrypted fallback values are cleared after delivery/consumption or by scheduled cleanup.
 
 ## Transactional email
 
 The API uses a provider-neutral SMTP adapter with STARTTLS or implicit TLS. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, and `FRONTEND_BASE_URL`. Production configuration rejects missing email credentials, insecure Redis/PostgreSQL transport, HTTP frontend URLs, and placeholder secrets.
 
-Email verification links are placed in URL fragments so the token is not sent in the initial HTTP request to the frontend. The frontend must read the fragment, submit the token to the API, immediately clear the fragment from browser history, and avoid third-party scripts/analytics on verification and reset pages. Apply a strict Referrer-Policy of `no-referrer` to those pages.
+Email verification and reset links place their token in the URL fragment so the token is not sent in the initial HTTP request to the frontend. The frontend must read the fragment, submit the token to the API, immediately clear the fragment from browser history, and avoid third-party scripts/analytics on verification and reset pages. Apply a strict Referrer-Policy of `no-referrer` to those pages.
 
 ## Local Redis
 
 Redis is required for authentication throttling. The API deliberately fails closed if it cannot connect. Do not change this to an in-memory production fallback.
+
+## Scheduled cleanup
+
+Run the authentication cleanup command hourly using the hosting platform's scheduler:
+
+```bash
+cd apps/api && uv run python -m scripts.cleanup_auth
+```
+
+It clears expired encrypted OTP fallback values, removes old expired verification/reset tokens and OTP challenges, and removes revoked/expired sessions after the retention period. The scheduler itself must be configured and monitored before production.
 
 ## Secrets
 
@@ -85,23 +93,10 @@ From `apps/api`:
 ```bash
 uv run pytest
 uv run ruff check .
+uv run alembic upgrade head
 ```
 
-From `apps/web`:
-
-```bash
-npm run lint
-npm run typecheck
-npm run build
-```
-
-## Database changes
-
-- Update SQLAlchemy models first.
-- Generate or author an Alembic migration and review it before applying.
-- Test upgrade and downgrade behavior against PostgreSQL.
-- Never edit an already-applied migration; add a new migration instead.
-- Keep tenant-aware foreign keys, uniqueness and conflict constraints in the database wherever appropriate.
+GitHub Actions runs lint, unit tests and PostgreSQL migration checks for API changes on the development branch and pull requests.
 
 ## Security release gate
 
