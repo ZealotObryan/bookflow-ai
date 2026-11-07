@@ -2,7 +2,16 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Index, JSON, String, Uuid, func
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Uuid,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,6 +23,8 @@ class AuditEvent(Base):
     __table_args__ = (
         Index("ix_audit_events_business_created", "business_id", "created_at"),
         Index("ix_audit_events_actor_created", "actor_user_id", "created_at"),
+        CheckConstraint("length(action) > 0", name="action_nonempty"),
+        CheckConstraint("length(target_type) > 0", name="target_type_nonempty"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
