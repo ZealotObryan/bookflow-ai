@@ -43,23 +43,30 @@ uv run uvicorn app.main:app --reload --port 8000
 
 ## Authentication security controls
 
-- Passwords are hashed with Argon2id; raw passwords are never persisted.
-- Login uses a dummy Argon2 verification for unknown email addresses and returns the same error for unknown, disabled and incorrect-password accounts.
-- Authentication endpoints use Redis-backed, atomic, distributed IP and identifier rate limits. If Redis is unavailable, authentication requests fail closed with HTTP 503 rather than silently disabling throttling.
-- Access JWTs are limited to ten minutes and validate the configured algorithm, issuer and audience.
-- Refresh tokens are opaque, high-entropy, SHA-256 hashed in storage, rotated at use and revoked server-side.
-- Reuse of a previously rotated refresh token revokes the user's remaining active sessions as a suspected token replay.
+- Passwords use Argon2id. Raw passwords are never persisted.
+- Registration requires email verification before password login is permitted.
+- Email verification and password-reset tokens are random, single-use, time-limited, and stored only as SHA-256 hashes.
+- Password reset responses do not disclose whether an email exists; successful resets revoke all active sessions and outstanding reset tokens.
+- Login performs a dummy Argon2 verification for unknown accounts and uses the same failure response for unknown, disabled, unverified and incorrect-password accounts.
+- Authentication endpoints use Redis-backed, atomic, distributed IP and identifier rate limits. If Redis is unavailable, authentication requests fail closed with HTTP 503.
+- Access JWTs expire after ten minutes and validate the configured algorithm, issuer and audience.
+- Refresh tokens are opaque, high-entropy, SHA-256 hashed in storage, rotated at use and revoked server-side. Reuse of a rotated token revokes all active sessions for that account.
 - Server-side sessions enforce a 12-hour idle timeout and a 30-day absolute lifetime.
-- Password changes require the current password and revoke every active session.
-- Users can revoke all sessions with `POST /api/v1/auth/logout-all`.
+- Password changes require the current password and revoke all sessions. Users can also revoke all sessions explicitly.
 - Security headers prevent framing, MIME sniffing, referrer leakage and caching of API responses.
-- Phone OTPs expire after five minutes, allow at most five attempts, and are protected by Redis rate limits. OTP hashes use an HMAC pepper; temporary encrypted values are cleared when a challenge is consumed or expires through the cleanup process.
-- TumaSend uses separate asset-scoped WhatsApp and SMS credentials. WhatsApp is attempted first; SMS fallback uses the same code.
+- Phone OTPs expire after five minutes, allow at most five attempts, and are protected by distributed rate limits. OTP hashes use an HMAC pepper; temporary encrypted values are cleared after delivery/consumption or when replaced.
+- TumaSend uses separate asset-scoped WhatsApp and SMS credentials. WhatsApp is attempted first; SMS fallback reuses the same code.
 - TumaSend webhooks must pass HMAC signature verification before affecting delivery state.
+
+## Transactional email
+
+The API uses a provider-neutral SMTP adapter with STARTTLS or implicit TLS. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, and `FRONTEND_BASE_URL`. Production configuration rejects missing email credentials, insecure Redis/PostgreSQL transport, HTTP frontend URLs, and placeholder secrets.
+
+Email verification links are placed in URL fragments so the token is not sent in the initial HTTP request to the frontend. The frontend must read the fragment, submit the token to the API, immediately clear the fragment from browser history, and avoid third-party scripts/analytics on verification and reset pages. Apply a strict Referrer-Policy of `no-referrer` to those pages.
 
 ## Local Redis
 
-Redis is required for authentication throttling. The API deliberately fails closed if it cannot connect to Redis. Do not change this to an in-memory production fallback: it would allow limits to be bypassed across workers and restarts.
+Redis is required for authentication throttling. The API deliberately fails closed if it cannot connect. Do not change this to an in-memory production fallback.
 
 ## Secrets
 
@@ -98,7 +105,7 @@ npm run build
 
 ## Security release gate
 
-Before any production launch, complete email verification and password recovery delivery, test Redis and PostgreSQL under concurrency, verify provider webhooks against captured real payloads, configure HTTPS and trusted proxy handling, run dependency and static analysis scans, and perform an independent security review. Do not describe the system as production-ready until these checks pass.
+Before production launch, complete frontend verification/reset pages, test Redis and PostgreSQL under concurrency, verify provider webhooks against captured real payloads, configure HTTPS and trusted proxy handling, run dependency/static analysis scans, and perform an independent security review. Do not describe the system as production-ready until these checks pass.
 
 ## General security
 

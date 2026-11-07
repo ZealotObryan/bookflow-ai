@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from cryptography.fernet import Fernet, InvalidToken
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,6 +19,15 @@ class Settings(BaseSettings):
     session_idle_timeout_minutes: int = 720
     otp_pepper: str = "development-only-change-this-otp-pepper"
     otp_encryption_key: str = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+    email_verification_hours: int = 24
+    password_reset_minutes: int = 15
+    frontend_base_url: str = "http://localhost:3000"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str | None = None
+    smtp_use_ssl: bool = False
     tumasend_whatsapp_api_key: str | None = None
     tumasend_sms_api_key: str | None = None
     tumasend_base_url: str = "https://gateway.tumasend.com"
@@ -34,21 +44,35 @@ class Settings(BaseSettings):
     def validate_security_settings(self) -> "Settings":
         if self.jwt_algorithm not in {"HS256", "HS384", "HS512"}:
             raise ValueError("JWT_ALGORITHM must be one of HS256, HS384, or HS512")
-        if self.access_token_minutes < 5 or self.access_token_minutes > 15:
+        if not 5 <= self.access_token_minutes <= 15:
             raise ValueError("ACCESS_TOKEN_MINUTES must be between 5 and 15")
-        if self.refresh_token_days < 1 or self.refresh_token_days > 30:
+        if not 1 <= self.refresh_token_days <= 30:
             raise ValueError("REFRESH_TOKEN_DAYS must be between 1 and 30")
         if self.session_idle_timeout_minutes < 5:
             raise ValueError("SESSION_IDLE_TIMEOUT_MINUTES must be at least 5")
+        try:
+            Fernet(self.otp_encryption_key.encode("ascii"))
+        except (ValueError, TypeError, InvalidToken):
+            raise ValueError("OTP_ENCRYPTION_KEY must be a valid Fernet key") from None
+
         if self.environment.lower() == "production":
             secrets = {
                 "JWT_SECRET_KEY": self.jwt_secret_key,
                 "OTP_PEPPER": self.otp_pepper,
                 "OTP_ENCRYPTION_KEY": self.otp_encryption_key,
             }
+            placeholders = ("development-only", "replace-with", "change-this", "example")
             for name, value in secrets.items():
-                if value.startswith("development-only") or len(value) < 32:
-                    raise ValueError(f"Production requires a strong {name} of at least 32 characters")
+                if len(value) < 32 or value.lower().startswith(placeholders):
+                    raise ValueError(f"Production requires a unique high-entropy {name}")
+            if not self.redis_url.startswith("rediss://"):
+                raise ValueError("Production REDIS_URL must use TLS (rediss://)")
+            if "sslmode=require" not in self.database_url and "sslmode=verify-full" not in self.database_url:
+                raise ValueError("Production DATABASE_URL must enforce PostgreSQL TLS")
+            if not self.frontend_base_url.startswith("https://"):
+                raise ValueError("Production FRONTEND_BASE_URL must use HTTPS")
+            if not all([self.smtp_host, self.smtp_username, self.smtp_password, self.smtp_from_email]):
+                raise ValueError("Production requires configured transactional SMTP credentials")
         return self
 
 

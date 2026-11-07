@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -27,11 +28,16 @@ from app.core.security import (
     verify_password,
 )
 from app.db.session import get_db
+from app.integrations.email import EmailDeliveryError, send_transactional_email
 from app.integrations.tumasend import TumaSendClient, TumaSendError
-from app.models import AuthSession, PhoneOtpChallenge, User
+from app.models import AuthSession, AuthToken, PhoneOtpChallenge, User
 from app.modules.identity.schemas import (
     ChangePasswordRequest,
+    EmailRequest,
+    EmailTokenRequest,
     LoginRequest,
+    MessageResponse,
+    PasswordResetRequest,
     PhoneOtpAcceptedResponse,
     PhoneOtpRequest,
     PhoneOtpVerifyRequest,
@@ -41,11 +47,14 @@ from app.modules.identity.schemas import (
     UserResponse,
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 bearer = HTTPBearer(auto_error=False)
 OTP_LIFETIME_MINUTES = 5
 OTP_MAX_ATTEMPTS = 5
-# Equal-cost password verification for unknown email addresses reduces account enumeration by timing.
+EMAIL_VERIFICATION_PURPOSE = "verify_email"
+PASSWORD_RESET_PURPOSE = "password_reset"
+GENERIC_EMAIL_MESSAGE = "If the address is eligible, instructions will be sent to it."
 _DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
 
 
@@ -112,10 +121,79 @@ def get_current_user(
         db.commit()
         raise HTTPException(status_code=401, detail="Session expired due to inactivity")
 
-    # The server, not the browser, controls the idle timeout.
     session.last_used_at = now
     db.commit()
     return user
+
+
+def _email_configured() -> bool:
+    settings = get_settings()
+    return all([settings.smtp_host, settings.smtp_username, settings.smtp_password, settings.smtp_from_email])
+
+
+def _create_email_token(db: Session, user: User, purpose: str) -> str:
+    now = datetime.now(UTC)
+    previous = db.scalars(
+        select(AuthToken)
+        .where(
+            AuthToken.user_id == user.id,
+            AuthToken.purpose == purpose,
+            AuthToken.consumed_at.is_(None),
+        )
+        .with_for_update()
+    ).all()
+    for old_token in previous:
+        old_token.consumed_at = now
+
+    raw_token = secrets.token_urlsafe(48)
+    if purpose == EMAIL_VERIFICATION_PURPOSE:
+        expires = now + timedelta(hours=get_settings().email_verification_hours)
+    else:
+        expires = now + timedelta(minutes=get_settings().password_reset_minutes)
+    db.add(
+        AuthToken(
+            user_id=user.id,
+            token_hash=hash_refresh_token(raw_token),
+            purpose=purpose,
+            expires_at=expires,
+        )
+    )
+    db.commit()
+    return raw_token
+
+
+def _send_auth_email(user: User, raw_token: str, purpose: str) -> None:
+    settings = get_settings()
+    if purpose == EMAIL_VERIFICATION_PURPOSE:
+        subject = "Verify your BookFlow AI email address"
+        url = f"{settings.frontend_base_url.rstrip('/')}/auth/verify-email#token={raw_token}"
+        body = (
+            f"Hello {user.full_name},\n\n"
+            "Please verify your email address to activate your BookFlow AI sign-in.\n\n"
+            f"{url}\n\n"
+            f"This link expires in {settings.email_verification_hours} hours. "
+            "If you did not create this account, you can ignore this email."
+        )
+    else:
+        subject = "Reset your BookFlow AI password"
+        url = f"{settings.frontend_base_url.rstrip('/')}/auth/reset-password#token={raw_token}"
+        body = (
+            f"Hello {user.full_name},\n\n"
+            "A password reset was requested for your BookFlow AI account.\n\n"
+            f"{url}\n\n"
+            f"This link expires in {settings.password_reset_minutes} minutes. "
+            "If you did not request this, ignore this email and consider reviewing your active sessions."
+        )
+    send_transactional_email(recipient=user.email, subject=subject, text_body=body)
+
+
+def _request_auth_email(user: User, purpose: str, db: Session) -> None:
+    raw_token = _create_email_token(db, user, purpose)
+    try:
+        _send_auth_email(user, raw_token, purpose)
+    except EmailDeliveryError:
+        # Do not log addresses, token values, or full verification/reset URLs.
+        logger.error("Transactional auth email delivery failed for purpose=%s", purpose)
 
 
 def _tumasend() -> TumaSendClient:
@@ -245,31 +323,130 @@ def _verify_code(
 
 @router.post(
     "/register",
-    response_model=TokenResponse,
-    status_code=201,
+    response_model=MessageResponse,
+    status_code=202,
     dependencies=[Depends(auth_rate_limit("register", ip_limit=5, ip_window=3600))],
 )
-def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
+def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> MessageResponse:
+    if not _email_configured():
+        raise HTTPException(status_code=503, detail="Account registration is temporarily unavailable")
     normalized = str(payload.email).strip().casefold()
-    user = User(
-        email=normalized,
-        email_normalized=normalized,
-        full_name=payload.full_name,
-        password_hash=hash_password(payload.password),
+    user = db.scalar(select(User).where(User.email_normalized == normalized))
+    if user is None:
+        user = User(
+            email=normalized,
+            email_normalized=normalized,
+            full_name=payload.full_name,
+            password_hash=hash_password(payload.password),
+        )
+        db.add(user)
+        try:
+            db.flush()
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            user = db.scalar(select(User).where(User.email_normalized == normalized))
+    if user is not None and user.email_verified_at is None and user.is_active:
+        _request_auth_email(user, EMAIL_VERIFICATION_PURPOSE, db)
+    return MessageResponse(message="If the address can be registered, a verification email will be sent.")
+
+
+@router.post(
+    "/email/resend-verification",
+    response_model=MessageResponse,
+    status_code=202,
+    dependencies=[
+        Depends(auth_rate_limit("email-verify-resend", ip_limit=10, ip_window=3600, identifier_limit=3, identifier_window=3600, identifier_field="email"))
+    ],
+)
+def resend_email_verification(payload: EmailRequest, db: Session = Depends(get_db)) -> MessageResponse:
+    if not _email_configured():
+        raise HTTPException(status_code=503, detail="Email service is temporarily unavailable")
+    normalized = str(payload.email).strip().casefold()
+    user = db.scalar(select(User).where(User.email_normalized == normalized))
+    if user is not None and user.email_verified_at is None and user.is_active:
+        _request_auth_email(user, EMAIL_VERIFICATION_PURPOSE, db)
+    return MessageResponse(message=GENERIC_EMAIL_MESSAGE)
+
+
+@router.post(
+    "/email/verify",
+    response_model=MessageResponse,
+    dependencies=[Depends(auth_rate_limit("email-verify", ip_limit=20, ip_window=900))],
+)
+def verify_email(payload: EmailTokenRequest, db: Session = Depends(get_db)) -> MessageResponse:
+    token_hash = hash_refresh_token(payload.token)
+    auth_token = db.scalar(
+        select(AuthToken)
+        .where(AuthToken.token_hash == token_hash, AuthToken.purpose == EMAIL_VERIFICATION_PURPOSE)
+        .with_for_update()
     )
-    db.add(user)
-    try:
-        db.flush()
-        tokens = _issue_session(db, user)
-        db.commit()
-        return tokens
-    except IntegrityError:
-        db.rollback()
-        # Avoid confirming that an email address already has an account.
-        raise HTTPException(
-            status_code=202,
-            detail="If this email can be registered, the next steps will be sent to its owner.",
-        ) from None
+    now = datetime.now(UTC)
+    if auth_token is None or auth_token.consumed_at is not None or auth_token.expires_at <= now:
+        raise HTTPException(status_code=400, detail="Verification link is invalid or expired")
+    user = db.get(User, auth_token.user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(status_code=400, detail="Verification link is invalid or expired")
+    auth_token.consumed_at = now
+    user.email_verified_at = now
+    db.commit()
+    return MessageResponse(message="Email address verified. You can now sign in.")
+
+
+@router.post(
+    "/password/forgot",
+    response_model=MessageResponse,
+    status_code=202,
+    dependencies=[
+        Depends(auth_rate_limit("password-forgot", ip_limit=10, ip_window=3600, identifier_limit=3, identifier_window=3600, identifier_field="email"))
+    ],
+)
+def forgot_password(payload: EmailRequest, db: Session = Depends(get_db)) -> MessageResponse:
+    if not _email_configured():
+        raise HTTPException(status_code=503, detail="Password recovery is temporarily unavailable")
+    normalized = str(payload.email).strip().casefold()
+    user = db.scalar(select(User).where(User.email_normalized == normalized))
+    if user is not None and user.email_verified_at is not None and user.is_active:
+        _request_auth_email(user, PASSWORD_RESET_PURPOSE, db)
+    return MessageResponse(message=GENERIC_EMAIL_MESSAGE)
+
+
+@router.post(
+    "/password/reset",
+    response_model=MessageResponse,
+    dependencies=[Depends(auth_rate_limit("password-reset", ip_limit=20, ip_window=900))],
+)
+def reset_password(payload: PasswordResetRequest, db: Session = Depends(get_db)) -> MessageResponse:
+    token_hash = hash_refresh_token(payload.token)
+    auth_token = db.scalar(
+        select(AuthToken)
+        .where(AuthToken.token_hash == token_hash, AuthToken.purpose == PASSWORD_RESET_PURPOSE)
+        .with_for_update()
+    )
+    now = datetime.now(UTC)
+    if auth_token is None or auth_token.consumed_at is not None or auth_token.expires_at <= now:
+        raise HTTPException(status_code=400, detail="Password reset link is invalid or expired")
+    user = db.get(User, auth_token.user_id)
+    if user is None or not user.is_active or user.email_verified_at is None:
+        raise HTTPException(status_code=400, detail="Password reset link is invalid or expired")
+    auth_token.consumed_at = now
+    user.password_hash = hash_password(payload.new_password)
+    db.execute(
+        update(AuthSession)
+        .where(AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None))
+        .values(revoked_at=now)
+    )
+    db.execute(
+        update(AuthToken)
+        .where(
+            AuthToken.user_id == user.id,
+            AuthToken.purpose == PASSWORD_RESET_PURPOSE,
+            AuthToken.consumed_at.is_(None),
+        )
+        .values(consumed_at=now)
+    )
+    db.commit()
+    return MessageResponse(message="Password updated. Please sign in again.")
 
 
 @router.post(
@@ -284,7 +461,12 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
     user = db.scalar(select(User).where(User.email_normalized == normalized))
     password_hash = user.password_hash if user is not None and user.password_hash else _DUMMY_PASSWORD_HASH
     password_valid = verify_password(payload.password, password_hash)
-    if user is None or not password_valid or not user.is_active:
+    if (
+        user is None
+        or not password_valid
+        or not user.is_active
+        or user.email_verified_at is None
+    ):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     tokens = _issue_session(db, user)
     db.commit()
@@ -307,7 +489,6 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> TokenResp
     if session is None:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
     if session.revoked_at is not None:
-        # A rotated refresh token was presented again: treat this as possible token theft.
         db.execute(
             update(AuthSession)
             .where(AuthSession.user_id == session.user_id, AuthSession.revoked_at.is_(None))
@@ -321,7 +502,7 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> TokenResp
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
     user = db.get(User, session.user_id)
-    if user is None or not user.is_active:
+    if user is None or not user.is_active or user.email_verified_at is None:
         session.revoked_at = now
         db.commit()
         raise HTTPException(status_code=401, detail="Account is unavailable")
@@ -488,7 +669,7 @@ async def tumasend_webhook(request: Request, db: Session = Depends(get_db)) -> d
         raise HTTPException(status_code=400, detail="Invalid webhook payload") from None
     if not isinstance(event, dict) or not isinstance(event.get("payload", {}), dict):
         raise HTTPException(status_code=400, detail="Invalid webhook payload")
-    event_type = event.get("event_type")
+    event_type = event.get("event_type)
     data = event.get("payload") or {}
     batch_id = data.get("batch_id")
     channel = data.get("channel")
@@ -510,6 +691,7 @@ async def tumasend_webhook(request: Request, db: Session = Depends(get_db)) -> d
 
     if event_type == "message.delivered":
         challenge.delivery_status = "delivered"
+        challenge.code_ciphertext = None
         db.commit()
         return {"status": "recorded"}
 
@@ -533,6 +715,7 @@ async def tumasend_webhook(request: Request, db: Session = Depends(get_db)) -> d
                 challenge.delivery_status = "sms_queued"
             except (TumaSendError, InvalidToken):
                 challenge.delivery_status = "sms_failed"
+                challenge.code_ciphertext = None
         db.commit()
         return {"status": "fallback_attempted"}
 
