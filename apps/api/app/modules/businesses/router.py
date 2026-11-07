@@ -37,6 +37,12 @@ INVITATION_LIFETIME_HOURS = 72
 INVITABLE_ROLES = {"admin", "manager", "staff"}
 
 
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 def _slug_base(name: str) -> str:
     slug = _SLUG_RE.sub("-", name.casefold()).strip("-")
     return slug[:70] or "business"
@@ -236,7 +242,7 @@ def accept_invitation(
     now = datetime.now(UTC)
     if (
         invitation is None or invitation.accepted_at is not None
-        or invitation.revoked_at is not None or invitation.expires_at <= now
+        or invitation.revoked_at is not None or _as_utc(invitation.expires_at) <= now
         or invitation.email_normalized != user.email_normalized
     ):
         raise HTTPException(status_code=400, detail="Invitation is invalid or expired")

@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
+from app.core.security import hash_refresh_token
 from app.models import AuditEvent, Business, BusinessInvitation, BusinessMembership, User
 from app.modules.businesses.router import accept_invitation, create_invitation, update_member
 from app.modules.businesses.schemas import (
@@ -63,7 +64,7 @@ def test_owner_can_invite_staff_and_token_is_not_stored_plaintext(db_session, mo
     assert invitation is not None
     raw_token = delivered["text_body"].split("token=", 1)[1].split()[0]
     assert invitation.token_hash != raw_token
-    assert invitation.expires_at > datetime.now(UTC)
+    assert (invitation.expires_at.replace(tzinfo=UTC) if invitation.expires_at.tzinfo is None else invitation.expires_at) > datetime.now(UTC)
 
 
 def test_admin_cannot_invite_another_admin(db_session, monkeypatch) -> None:
@@ -125,14 +126,15 @@ def test_expired_invitation_cannot_be_accepted(db_session) -> None:
     invitation = BusinessInvitation(
         business_id=business.id, invited_by_user_id=owner.id,
         email_normalized=invitee.email_normalized, role="staff",
-        token_hash="a" * 64, expires_at=datetime.now(UTC) - timedelta(minutes=1),
+        token_hash=hash_refresh_token("expired-invitation-token-value-1234567890"),
+        expires_at=datetime.now(UTC) - timedelta(minutes=1),
     )
     db_session.add(invitation)
     db_session.commit()
 
     with pytest.raises(HTTPException) as exc:
         accept_invitation(
-            InvitationAcceptRequest(token="expired-token-value-long-enough"), invitee, db_session
+            InvitationAcceptRequest(token="expired-invitation-token-value-1234567890"), invitee, db_session
         )
     assert exc.value.status_code == 400
 
