@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.config import get_settings
 from app.core.rate_limit import close_redis
 from app.modules.identity.router import router as identity_router
 
@@ -17,6 +20,17 @@ app = FastAPI(
     description="Backend API for the BookFlow AI appointment platform.",
     version="0.1.0",
     lifespan=lifespan,
+)
+
+frontend = urlsplit(get_settings().frontend_base_url)
+frontend_origin = f"{frontend.scheme}://{frontend.netloc}"
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[frontend_origin],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    expose_headers=["Retry-After"],
 )
 
 
