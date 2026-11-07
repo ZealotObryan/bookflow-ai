@@ -41,6 +41,18 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
+## Authentication foundation
+
+The API now has email/password registration and login, short-lived JWT access tokens, opaque rotating refresh tokens, session revocation, and an authenticated `/auth/me` endpoint under `/api/v1`.
+
+- Passwords are hashed with Argon2 through `pwdlib`; plaintext passwords are never stored.
+- Refresh tokens are stored only as SHA-256 hashes and are rotated on refresh.
+- Access tokens are checked against the server-side session record, allowing logout/revocation to take effect immediately.
+- Phone number fields and OTP challenge storage are included in the schema. Phone OTP delivery and verification are **not active yet**: an SMS/WhatsApp provider must be selected and its adapter implemented before those endpoints can be enabled.
+- Email verification delivery is also pending. Registration currently creates an unverified account; production onboarding must add email verification and abuse controls.
+- Public endpoints need distributed rate limiting (preferably Redis-backed) before internet exposure.
+- Set strong, independent `JWT_SECRET_KEY` and `OTP_PEPPER` values in every deployed environment. The example values are development-only.
+
 ## Quality checks
 
 From `apps/api`:

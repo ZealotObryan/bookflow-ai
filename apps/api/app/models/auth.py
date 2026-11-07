@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Uuid, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -27,6 +27,10 @@ class AuthSession(Base):
 
 class PhoneOtpChallenge(Base):
     __tablename__ = "phone_otp_challenges"
+    __table_args__ = (
+        CheckConstraint("purpose IN ('login', 'link')", name="purpose"),
+        CheckConstraint("attempts >= 0 AND attempts <= 5", name="attempts"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     phone_e164: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
