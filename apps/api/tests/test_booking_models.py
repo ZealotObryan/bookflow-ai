@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.exc import IntegrityError
@@ -43,7 +45,7 @@ def test_booking_segments_are_tenant_scoped(db_session: Session) -> None:
     db_session.flush()
     booking = Booking(
         business_id=business.id, customer_id=customer.id, status="held",
-        starts_at="2026-11-10T08:00:00+00:00", ends_at="2026-11-10T08:30:00+00:00",
+        starts_at=datetime.fromisoformat('2026-11-10T08:00:00+00:00'), ends_at=datetime.fromisoformat('2026-11-10T08:30:00+00:00'),
         total_amount="5000.00", currency="MWK", idempotency_key="test-booking-1",
     )
     db_session.add(booking)
