@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 revision: str = "0001_identity_business"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
-depends_on: Union[str, Sequence[str], None] = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

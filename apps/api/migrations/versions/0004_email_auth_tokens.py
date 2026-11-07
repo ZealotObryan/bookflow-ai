@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 revision: str = "0004_email_auth_tokens"
 down_revision: str | None = "0003_tumasend_phone_otp"
 branch_labels: str | Sequence[str] | None = None
-depends_on: Union[str, Sequence[str], None] = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

@@ -49,8 +49,8 @@ def new_otp() -> str:
 
 
 def hash_otp(phone: str, code: str) -> str:
-    pepper = get_settings().otp_pepper.encode("utf-8")
-    return hmac.new(pepper, f"{phone}:{code}".encode("utf-8"), hashlib.sha256).hexdigest()
+    pepper = get_settings().otp_pepper.encode()
+    return hmac.new(pepper, f"{phone}:{code}".encode(), hashlib.sha256).hexdigest()
 
 
 def encrypt_otp(code: str) -> str:
