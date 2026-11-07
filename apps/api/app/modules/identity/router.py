@@ -8,11 +8,12 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 from cryptography.fernet import InvalidToken
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from urllib.parse import urlsplit
 
 from app.core.config import get_settings
 from app.core.rate_limit import auth_rate_limit
@@ -41,7 +42,6 @@ from app.modules.identity.schemas import (
     PhoneOtpAcceptedResponse,
     PhoneOtpRequest,
     PhoneOtpVerifyRequest,
-    RefreshRequest,
     RegisterRequest,
     TokenResponse,
     UserResponse,
@@ -58,7 +58,7 @@ GENERIC_EMAIL_MESSAGE = "If the address is eligible, instructions will be sent t
 _DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
 
 
-def _issue_session(db: Session, user: User) -> TokenResponse:
+def _issue_session(db: Session, user: User) -> tuple[TokenResponse, str]:
     settings = get_settings()
     refresh = new_refresh_token()
     session = AuthSession(
@@ -69,11 +69,58 @@ def _issue_session(db: Session, user: User) -> TokenResponse:
     db.add(session)
     db.flush()
     access = create_access_token(user.id, session.id)
-    return TokenResponse(
-        access_token=access,
-        refresh_token=refresh,
-        expires_in=settings.access_token_minutes * 60,
+    return (
+        TokenResponse(
+            access_token=access,
+            expires_in=settings.access_token_minutes * 60,
+        ),
+        refresh,
     )
+
+
+
+
+def _refresh_cookie_name() -> str:
+    if get_settings().environment.lower() in {"production", "staging"}:
+        return "__Secure-bookflow_refresh"
+    return "bookflow_refresh"
+
+
+def _set_refresh_cookie(response: Response, token: str) -> None:
+    settings = get_settings()
+    secure = settings.environment.lower() in {"production", "staging"}
+    response.set_cookie(
+        key=_refresh_cookie_name(),
+        value=token,
+        max_age=settings.refresh_token_days * 24 * 60 * 60,
+        httponly=True,
+        secure=secure,
+        samesite="lax",
+        path="/api/v1/auth/refresh",
+    )
+
+
+def _clear_refresh_cookie(response: Response) -> None:
+    settings = get_settings()
+    secure = settings.environment.lower() in {"production", "staging"}
+    response.delete_cookie(
+        key=_refresh_cookie_name(),
+        path="/api/v1/auth/refresh",
+        secure=secure,
+        httponly=True,
+        samesite="lax",
+    )
+
+
+def _require_same_origin(request: Request) -> None:
+    expected = urlsplit(get_settings().frontend_base_url)
+    expected_origin = f"{expected.scheme}://{expected.netloc}"
+    supplied_origin = request.headers.get("origin", "")
+    if not supplied_origin or not hmac.compare_digest(supplied_origin, expected_origin):
+        raise HTTPException(status_code=403, detail="Cross-origin authentication request rejected")
+    fetch_site = request.headers.get("sec-fetch-site")
+    if fetch_site == "cross-site":
+        raise HTTPException(status_code=403, detail="Cross-site authentication request rejected")
 
 
 def _decode_access_token(token: str) -> dict:
@@ -419,7 +466,11 @@ def forgot_password(payload: EmailRequest, db: Session = Depends(get_db)) -> Mes
     response_model=MessageResponse,
     dependencies=[Depends(auth_rate_limit("password-reset", ip_limit=20, ip_window=900))],
 )
-def reset_password(payload: PasswordResetRequest, db: Session = Depends(get_db)) -> MessageResponse:
+def reset_password(
+    payload: PasswordResetRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> MessageResponse:
     token_hash = hash_refresh_token(payload.token)
     auth_token = db.scalar(
         select(AuthToken)
@@ -449,6 +500,7 @@ def reset_password(payload: PasswordResetRequest, db: Session = Depends(get_db))
         .values(consumed_at=now)
     )
     db.commit()
+    _clear_refresh_cookie(response)
     return MessageResponse(message="Password updated. Please sign in again.")
 
 
@@ -459,7 +511,11 @@ def reset_password(payload: PasswordResetRequest, db: Session = Depends(get_db))
         Depends(auth_rate_limit("login", ip_limit=30, ip_window=900, identifier_limit=5, identifier_window=900, identifier_field="email"))
     ],
 )
-def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
+def login(
+    payload: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> TokenResponse:
     normalized = str(payload.email).strip().casefold()
     user = db.scalar(select(User).where(User.email_normalized == normalized))
     password_hash = user.password_hash if user is not None and user.password_hash else _DUMMY_PASSWORD_HASH
@@ -471,8 +527,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
         or user.email_verified_at is None
     ):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    tokens = _issue_session(db, user)
+    tokens, refresh_token = _issue_session(db, user)
     db.commit()
+    _set_refresh_cookie(response, refresh_token)
     return tokens
 
 
@@ -481,8 +538,12 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
     response_model=TokenResponse,
     dependencies=[Depends(auth_rate_limit("refresh", ip_limit=30, ip_window=900))],
 )
-def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> TokenResponse:
-    token_hash = hash_refresh_token(payload.refresh_token)
+def refresh(request: Request, response: Response, db: Session = Depends(get_db)) -> TokenResponse:
+    _require_same_origin(request)
+    raw_refresh_token = request.cookies.get(_refresh_cookie_name())
+    if not raw_refresh_token:
+        raise HTTPException(status_code=401, detail="Refresh session is missing")
+    token_hash = hash_refresh_token(raw_refresh_token)
     session = db.scalar(
         select(AuthSession)
         .where(AuthSession.refresh_token_hash == token_hash)
@@ -517,13 +578,15 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> TokenResp
 
     session.revoked_at = now
     session.last_used_at = now
-    tokens = _issue_session(db, user)
+    tokens, next_refresh_token = _issue_session(db, user)
     db.commit()
+    _set_refresh_cookie(response, next_refresh_token)
     return tokens
 
 
 @router.post("/logout", status_code=204)
 def logout(
+    response: Response,
     user: User = Depends(get_current_user),
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     db: Session = Depends(get_db),
@@ -538,21 +601,28 @@ def logout(
     if session is not None and session.user_id == user.id and session.revoked_at is None:
         session.revoked_at = datetime.now(UTC)
         db.commit()
+    _clear_refresh_cookie(response)
 
 
 @router.post("/logout-all", status_code=204)
-def logout_all(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> None:
+def logout_all(
+    response: Response,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
     db.execute(
         update(AuthSession)
         .where(AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None))
         .values(revoked_at=datetime.now(UTC))
     )
     db.commit()
+    _clear_refresh_cookie(response)
 
 
 @router.post("/password/change", status_code=204)
 def change_password(
     payload: ChangePasswordRequest,
+    response: Response,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> None:
@@ -568,6 +638,7 @@ def change_password(
         .values(revoked_at=now)
     )
     db.commit()
+    _clear_refresh_cookie(response)
 
 
 @router.get("/me", response_model=UserResponse)
@@ -608,10 +679,15 @@ def request_phone_code(payload: PhoneOtpRequest, db: Session = Depends(get_db)) 
     response_model=TokenResponse,
     dependencies=[Depends(auth_rate_limit("phone-verify", ip_limit=15, ip_window=900, identifier_limit=5, identifier_window=900, identifier_field="challenge_id"))],
 )
-def verify_phone_code(payload: PhoneOtpVerifyRequest, db: Session = Depends(get_db)) -> TokenResponse:
+def verify_phone_code(
+    payload: PhoneOtpVerifyRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> TokenResponse:
     _, user = _verify_code(db=db, payload=payload, purpose="login")
-    tokens = _issue_session(db, user)
+    tokens, refresh_token = _issue_session(db, user)
     db.commit()
+    _set_refresh_cookie(response, refresh_token)
     return tokens
 
 

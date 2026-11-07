@@ -38,10 +38,6 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(min_length=12, max_length=128)
 
 
-class RefreshRequest(BaseModel):
-    refresh_token: str = Field(min_length=40, max_length=200)
-
-
 class PhoneOtpRequest(BaseModel):
     phone_number: str = Field(pattern=r"^\+[1-9][0-9]{7,14}$")
 
@@ -53,7 +49,6 @@ class PhoneOtpVerifyRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    refresh_token: str
     token_type: str = "bearer"
     expires_in: int
 
