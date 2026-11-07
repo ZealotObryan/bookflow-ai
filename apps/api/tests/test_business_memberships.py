@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session
 from app.db.base import Base
 from app.models import AuditEvent, Business, BusinessInvitation, BusinessMembership, User
 from app.modules.businesses.router import accept_invitation, create_invitation, update_member
-from app.modules.businesses.schemas import InvitationAcceptRequest, InvitationCreateRequest, MembershipUpdateRequest
+from app.modules.businesses.schemas import (
+    InvitationAcceptRequest,
+    InvitationCreateRequest,
+    MembershipUpdateRequest,
+)
 
 
 @pytest.fixture()
