@@ -16,31 +16,32 @@
 ## 2. Core entities
 
 ### Identity and tenancy
-
 - `users`: login identity and profile.
 - `businesses`: tenant, display name, timezone, locale, currency and status.
 - `business_memberships`: user-to-business relationship, role and membership status.
-- `roles/permissions`: initially a small, explicit role model; expand only when real permission needs emerge.
+- `roles/permissions`: initially a small, explicit role model.
 
-### Business setup
-
+### Business setup and scheduling
 - `business_hours`: recurring operating windows by weekday.
-- `services`: name, description, duration, price, currency, active state and booking policy.
-- `employees`: staff profile and business membership/assignment.
+- `services`: name, description, duration, price, currency, active state, booking policy and resource requirements.
+- `employees`: staff profile and business assignment.
 - `employee_services`: services an employee can perform.
 - `employee_availability`: recurring and date-specific working windows.
+- `schedulable_resources`: bookable capacity units, including employee capacity and shared resources such as rooms, chairs, beds and equipment. Resource type, capacity and active state are explicit.
+- `employee_resource_links`: links an employee profile to its schedulable capacity unit.
+- `resource_availability`: recurring and date-specific availability for shared resources.
 - `blocked_times`: breaks, leave, maintenance and other unavailable periods.
+- `service_resource_requirements`: resource types or specific resources required by a service, including quantity where applicable.
 
 ### Customers and bookings
-
 - `customers`: tenant-scoped customer profile and contact identifiers.
-- `booking_holds`: temporary resource reservations with expiry.
-- `bookings`: customer, status, start/end, timezone snapshot, source, notes and idempotency reference.
-- `booking_items`: services, assigned employee/resource, sequence, duration and price snapshot.
+- `bookings`: customer, status, overall start/end, timezone snapshot, source, notes and idempotency reference.
+- `booking_items`: one service step per line, with sequence, service, assigned employee where required, start/end and price/duration snapshots.
+- `booking_allocations`: time-bounded allocation of schedulable resources to a booking item; supports employees and shared resources under the same conflict model.
+- `booking_holds`: temporary allocations with expiry, created before confirmation when required.
 - `booking_status_history`: actor, transition, timestamp and reason.
 
 ### Payments and external systems
-
 - `payments`: internal amount, currency, status, purpose and provider reference.
 - `payment_events`: verified provider events and processing status.
 - `calendar_connections`: OAuth connection metadata and encrypted token references.
@@ -52,34 +53,46 @@
 
 Subscription and platform billing entities will be added before paid self-service launch.
 
-## 3. Important relationships
+## 3. Scheduling decisions confirmed
+
+1. **No automatic employee assignment in the initial release.** Where a service requires an employee, the booking flow must collect or select a specific eligible employee. Automatic assignment is a later enhancement.
+2. **Multi-service appointments are supported.** A booking is the parent appointment and contains ordered booking items, each representing a service step. Items may be handled by different employees. The schedule is calculated from each item's actual interval rather than assuming one employee performs the entire appointment.
+3. **Shared resources are first-class schedulable capacity.** Rooms, chairs, beds and equipment can be required and allocated to service items. Employee and shared-resource conflicts use a common allocation model.
+4. **Availability is evaluated for every required allocation.** A service is not bookable unless its required employee capacity and shared-resource requirements can all be allocated for the requested interval.
+
+The initial customer flow should present a clear sequence of service steps. Whether overlapping/parallel service steps are allowed is intentionally left as a separate policy decision; do not assume parallel execution in the first booking workflow.
+
+## 4. Important relationships
 
 - A user may have many business memberships; a business has many members.
-- A business owns services, employees, customers, schedules, bookings and payments.
-- A booking belongs to one business and customer and contains one or more booking items.
-- Each booking item references a service and, where applicable, an assigned employee/resource.
+- A business owns services, employees, schedulable resources, customers, schedules, bookings and payments.
+- An employee profile links to a schedulable capacity unit and may be eligible for many services.
+- A booking belongs to one business and customer and contains one or more ordered booking items.
+- Each booking item references one service and may reference a specific employee.
+- Booking allocations connect booking items to all required employee/shared resources for their exact time intervals.
 - A payment belongs to a business and is associated with a booking or other explicit payment purpose.
 - External calendar events map to internal records; they do not replace them.
 
-## 4. Constraints and indexes to design
+## 5. Constraints and indexes to design
 
 - Unique normalized user login identifier.
 - Unique membership per (business, user).
 - Tenant-aware foreign keys for all tenant-owned relationships.
 - Index bookings by (business_id, start_at), status and customer.
-- Index employee schedule/resource allocations by tenant, resource and time range.
+- Index allocations by tenant, resource and time range.
 - Unique provider event ID within provider/account scope.
 - Unique idempotency key within tenant and operation scope.
-- Check constraints for positive durations and non-negative money amounts.
+- Check constraints for positive durations, valid intervals and non-negative money amounts.
+- Enforce employee service eligibility and resource requirement compatibility in the booking application service and, where practical, database constraints.
 
-PostgreSQL range/exclusion constraints may be used to prevent overlapping active allocations for a single employee/resource. The final constraint must correctly model holds, confirmed bookings, buffers, multi-service bookings and cancellation. Do not ship a simplistic overlap constraint that rejects valid sequential services or misses concurrent writes.
+PostgreSQL range/exclusion constraints may be used to prevent overlapping active allocations for a single schedulable resource. The final constraint must correctly model holds, confirmed bookings, buffers, multi-service bookings and cancellation. Do not ship a simplistic overlap constraint that rejects valid sequential services or misses concurrent writes.
 
-## 5. Decisions still required before migrations
+## 6. Remaining decisions before migrations
 
-1. Whether employee assignment is mandatory for every service or whether shared resources (rooms, chairs, equipment) are first-class schedulable resources.
-2. Whether multi-service bookings are sequential under one employee, parallel across employees, or both.
-3. How business-level capacity and group bookings are represented.
-4. Exact deposit, expiry and cancellation policy semantics.
-5. RLS rollout and transaction-scoped tenant context strategy.
+1. Whether parallel/overlapping service steps are allowed, and under what business policy.
+2. How business-level capacity and group bookings are represented.
+3. Exact deposit, expiry and cancellation policy semantics.
+4. RLS rollout and transaction-scoped tenant context strategy.
+5. Whether resource requirements can be satisfied by any resource in a type/pool or must name a specific resource.
 
-These decisions will be resolved with concrete booking scenarios and tests before the first production schema migration.
+Resolve these with concrete booking scenarios and tests before the first production schema migration.
