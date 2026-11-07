@@ -669,7 +669,7 @@ async def tumasend_webhook(request: Request, db: Session = Depends(get_db)) -> d
         raise HTTPException(status_code=400, detail="Invalid webhook payload") from None
     if not isinstance(event, dict) or not isinstance(event.get("payload", {}), dict):
         raise HTTPException(status_code=400, detail="Invalid webhook payload")
-    event_type = event.get("event_type)
+    event_type = event.get("event_type")
     data = event.get("payload") or {}
     batch_id = data.get("batch_id")
     channel = data.get("channel")
