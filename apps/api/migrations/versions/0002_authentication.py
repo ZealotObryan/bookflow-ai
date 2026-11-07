@@ -4,15 +4,15 @@ Revision ID: 0002_authentication
 Revises: 0001_identity_business
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0002_authentication"
-down_revision: Union[str, None] = "0001_identity_business"
-branch_labels: Union[str, Sequence[str], None] = None
+down_revision: str | None = "0001_identity_business"
+branch_labels: str | Sequence[str] | None = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
