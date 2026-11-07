@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.rate_limit import close_redis
+from app.modules.businesses.router import router as businesses_router
 from app.modules.identity.router import router as identity_router
 
 
@@ -48,6 +49,7 @@ async def security_headers(request, call_next):
 
 
 app.include_router(identity_router, prefix="/api/v1")
+app.include_router(businesses_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["Operations"])
