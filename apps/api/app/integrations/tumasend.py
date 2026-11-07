@@ -8,21 +8,25 @@ class TumaSendError(RuntimeError):
 class TumaSendClient:
     def __init__(
         self,
-        api_key: str | None,
+        whatsapp_api_key: str | None,
+        sms_api_key: str | None,
         sms_sender_id: str | None,
         base_url: str = "https://gateway.tumasend.com",
     ) -> None:
-        if not api_key:
-            raise TumaSendError("TumaSend API key is not configured")
-        self.api_key = api_key
+        self.whatsapp_api_key = whatsapp_api_key
+        self.sms_api_key = sms_api_key
         self.sms_sender_id = sms_sender_id
         self.base_url = base_url.rstrip("/")
 
-    def _post(self, path: str, payload: dict[str, object]) -> dict[str, object]:
+    def _post(
+        self, path: str, api_key: str | None, payload: dict[str, object]
+    ) -> dict[str, object]:
+        if not api_key:
+            raise TumaSendError(f"TumaSend API key is not configured for {path}")
         try:
             response = httpx.post(
                 f"{self.base_url}/api/v1/{path}",
-                headers={"x-api-key": self.api_key, "Content-Type": "application/json"},
+                headers={"x-api-key": api_key, "Content-Type": "application/json"},
                 json=payload,
                 timeout=httpx.Timeout(10.0, connect=3.0),
             )
@@ -38,7 +42,11 @@ class TumaSendClient:
         return data
 
     def send_whatsapp(self, phone_e164: str, message: str) -> str:
-        result = self._post("send/whatsapp", {"recipients": [phone_e164], "message": message})
+        result = self._post(
+            "send/whatsapp",
+            self.whatsapp_api_key,
+            {"recipients": [phone_e164], "message": message},
+        )
         return str(result["batch_id"])
 
     def send_sms(self, phone_e164: str, message: str) -> str:
@@ -46,6 +54,7 @@ class TumaSendClient:
             raise TumaSendError("TumaSend SMS sender ID is not configured")
         result = self._post(
             "send/sms",
+            self.sms_api_key,
             {"from": self.sms_sender_id, "recipients": [phone_e164], "message": message},
         )
         return str(result["batch_id"])

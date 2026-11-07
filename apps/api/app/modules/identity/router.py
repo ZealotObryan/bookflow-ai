@@ -97,7 +97,8 @@ def get_current_user(
 def _tumasend() -> TumaSendClient:
     settings = get_settings()
     return TumaSendClient(
-        api_key=settings.tumasend_api_key,
+        whatsapp_api_key=settings.tumasend_whatsapp_api_key,
+        sms_api_key=settings.tumasend_sms_api_key,
         sms_sender_id=settings.tumasend_sms_sender_id,
         base_url=settings.tumasend_base_url,
     )

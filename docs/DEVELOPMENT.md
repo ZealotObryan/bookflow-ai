@@ -53,7 +53,7 @@ The API provides email/password registration and login, short-lived JWT access t
 - OTP hashes use an HMAC pepper. The temporary code is encrypted at rest so it can be re-sent through SMS if WhatsApp delivery fails.
 - TumaSend is the initial messaging adapter. It sends WhatsApp first, falls back to SMS if the WhatsApp send request fails, and also falls back to SMS when a signed `message.failed` webhook is received for a queued WhatsApp message.
 - A successful send API response means queued, not delivered. Delivery status is updated from signed TumaSend webhooks.
-- TumaSend credentials and sender IDs are not included in the repository. Configure `TUMASEND_API_KEY`, `TUMASEND_SMS_SENDER_ID`, and `TUMASEND_WEBHOOK_SECRET` in the local environment or secret manager.
+- TumaSend credentials and sender IDs are not included in the repository. Configure separate asset-scoped `TUMASEND_WHATSAPP_API_KEY` and `TUMASEND_SMS_API_KEY`, plus `TUMASEND_SMS_SENDER_ID` and `TUMASEND_WEBHOOK_SECRET`, in the local environment or secret manager.
 - TumaSend requires an approved business account and a sender ID for SMS. Validate WhatsApp template/policy requirements, account KYC, pricing, and real +265 delivery in sandbox/pilot testing before production.
 - Email verification delivery, distributed rate limiting, and broader audit logging remain pending.
 

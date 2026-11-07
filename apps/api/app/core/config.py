@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     otp_pepper: str = "development-only-change-this-otp-pepper"
     otp_encryption_key: str = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
-    tumasend_api_key: str | None = None
+    tumasend_whatsapp_api_key: str | None = None
+    tumasend_sms_api_key: str | None = None
     tumasend_base_url: str = "https://gateway.tumasend.com"
     tumasend_sms_sender_id: str | None = None
     tumasend_webhook_secret: str | None = None
