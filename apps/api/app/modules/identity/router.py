@@ -1,4 +1,3 @@
-import re
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -171,15 +170,15 @@ def me(user: User = Depends(get_current_user)) -> UserResponse:
 @router.post("/phone/request-code", status_code=202)
 def request_phone_code() -> None:
     # Delivery must be wired to an approved SMS/WhatsApp provider before enabling this route.
-    provider = get_settings().otp_delivery_provider
-    if provider == "unconfigured":
-        raise HTTPException(
-            status_code=503,
-            detail="Phone verification delivery is not configured yet",
-        )
-    raise HTTPException(status_code=501, detail="Configured OTP provider adapter is not implemented")
+    raise HTTPException(
+        status_code=503,
+        detail="Phone verification delivery is not configured yet",
+    )
 
 
 @router.post("/phone/verify-code", response_model=TokenResponse)
 def verify_phone_code() -> None:
-    raise HTTPException(status_code=501, detail="Phone OTP verification will be enabled with the delivery adapter")
+    raise HTTPException(
+        status_code=503,
+        detail="Phone OTP verification is not configured yet",
+    )
