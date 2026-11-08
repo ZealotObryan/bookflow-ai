@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -18,6 +18,7 @@ from app.models import (
     Service,
     User,
 )
+from app.modules.bookings.availability import get_availability
 from app.modules.bookings.router import BookingInput, SegmentInput, create_booking
 
 
@@ -157,3 +158,46 @@ def test_booking_outside_business_hours_is_rejected(db_session, booking_context)
             db=db_session,
         )
     assert error.value.status_code == 409
+
+
+
+def test_availability_returns_only_valid_employee_slots(db_session, booking_context):
+    business, user, _customer, employee, service = booking_context
+
+    result = get_availability(
+        business_id=business.id,
+        service_id=service.id,
+        target_date=date(2026, 11, 9),
+        employee_id=None,
+        slot_interval_minutes=30,
+        user=user,
+        db=db_session,
+    )
+
+    assert result["timezone"] == business.timezone
+    assert result["slots"]
+    assert all(slot["employee_id"] == employee.id for slot in result["slots"])
+    assert all(slot["starts_at"] < slot["ends_at"] for slot in result["slots"])
+
+
+def test_availability_excludes_existing_employee_hold(db_session, booking_context):
+    business, user, customer, employee, service = booking_context
+    booked_start = datetime(2026, 11, 9, 6, 30, tzinfo=UTC)
+    create_booking(
+        business_id=business.id,
+        payload=request_for(customer, service, employee, booked_start, "availability-hold-01"),
+        user=user,
+        db=db_session,
+    )
+
+    result = get_availability(
+        business_id=business.id,
+        service_id=service.id,
+        target_date=date(2026, 11, 9),
+        employee_id=employee.id,
+        slot_interval_minutes=30,
+        user=user,
+        db=db_session,
+    )
+
+    assert all(slot["starts_at"] != booked_start for slot in result["slots"])
