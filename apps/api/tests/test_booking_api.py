@@ -201,3 +201,23 @@ def test_availability_excludes_existing_employee_hold(db_session, booking_contex
     )
 
     assert all(slot["starts_at"] != booked_start for slot in result["slots"])
+
+
+
+def test_optional_employee_service_respects_requested_employee(db_session, booking_context):
+    business, user, _customer, employee, service = booking_context
+    service.requires_employee = False
+    db_session.commit()
+
+    result = get_availability(
+        business_id=business.id,
+        service_id=service.id,
+        target_date=date(2026, 11, 9),
+        employee_id=employee.id,
+        slot_interval_minutes=30,
+        user=user,
+        db=db_session,
+    )
+
+    assert result["slots"]
+    assert all(slot["employee_id"] == employee.id for slot in result["slots"])

@@ -144,7 +144,7 @@ def get_availability(
         reserved_end_utc = local_reserved_end.replace(tzinfo=timezone).astimezone(UTC)
 
         if start_utc > now:
-            candidate_employees: list[Employee | None] = employees if service.requires_employee else [None]
+            candidate_employees: list[Employee | None] = employees if employees else [None]
             for employee in candidate_employees:
                 if employee is not None:
                     employee_hours = db.get(
