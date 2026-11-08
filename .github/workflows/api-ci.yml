@@ -56,9 +56,9 @@ jobs:
       - name: Lint
         working-directory: apps/api
         run: uv run ruff check .
-      - name: Unit tests
-        working-directory: apps/api
-        run: uv run pytest -q
       - name: Apply migrations to PostgreSQL
         working-directory: apps/api
         run: uv run alembic upgrade head
+      - name: Unit and PostgreSQL integration tests
+        working-directory: apps/api
+        run: uv run pytest -q
