@@ -185,6 +185,8 @@ class BookingSegment(Base):
     sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reserved_starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reserved_ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="held", server_default="held")
     service_name_snapshot: Mapped[str] = mapped_column(String(120), nullable=False)
     duration_minutes_snapshot: Mapped[int] = mapped_column(Integer, nullable=False)

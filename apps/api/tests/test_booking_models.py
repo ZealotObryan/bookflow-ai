@@ -54,6 +54,7 @@ def test_booking_segments_are_tenant_scoped(db_session: Session) -> None:
         business_id=business.id, booking_id=booking.id, service_id=service.id,
         employee_id=employee.id, sequence_number=1,
         starts_at=datetime.fromisoformat("2026-11-10T08:00:00+00:00"), ends_at=datetime.fromisoformat("2026-11-10T08:30:00+00:00"),
+        reserved_starts_at=datetime.fromisoformat("2026-11-10T08:00:00+00:00"), reserved_ends_at=datetime.fromisoformat("2026-11-10T08:30:00+00:00"),
         service_name_snapshot=service.name, duration_minutes_snapshot=service.duration_minutes,
         price_amount_snapshot=service.price_amount,
     )

@@ -43,6 +43,7 @@ class Service(Base):
     buffer_before_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     buffer_after_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     price_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    requires_employee: Mapped[bool] = mapped_column(nullable=False, default=True, server_default="true")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active", server_default="active")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
