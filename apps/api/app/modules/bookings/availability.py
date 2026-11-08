@@ -10,7 +10,6 @@ from app.db.session import get_db, set_tenant_context
 from app.models import (
     Booking,
     BookingSegment,
-    Business,
     BusinessWeeklyHours,
     Employee,
     EmployeeTimeOff,
@@ -156,6 +155,7 @@ def get_availability(
                         or employee_hours.is_unavailable
                         or employee_hours.starts_at is None
                         or employee_hours.ends_at is None
+                        or local_reserved_start.date() != target_date
                         or local_reserved_start.time() < employee_hours.starts_at
                         or local_reserved_end.date() != target_date
                         or local_reserved_end.time() > employee_hours.ends_at
