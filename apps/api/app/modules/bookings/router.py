@@ -1,11 +1,11 @@
 import uuid
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -116,6 +116,23 @@ def create_booking(
 ):
     business, _membership = require_membership(business_id, user, db)
     set_tenant_context(db, business.id)
+    now = datetime.now(UTC)
+    expired_ids = select(Booking.id).where(
+        Booking.business_id == business.id,
+        Booking.status == "held",
+        Booking.hold_expires_at.is_not(None),
+        Booking.hold_expires_at <= now,
+    )
+    db.execute(
+        update(BookingSegment)
+        .where(BookingSegment.business_id == business.id, BookingSegment.booking_id.in_(expired_ids))
+        .values(status="cancelled")
+    )
+    db.execute(
+        update(Booking)
+        .where(Booking.business_id == business.id, Booking.id.in_(expired_ids))
+        .values(status="expired")
+    )
 
     existing = db.scalar(select(Booking).where(
         Booking.business_id == business.id, Booking.idempotency_key == payload.idempotency_key
