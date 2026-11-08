@@ -11,9 +11,19 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
 from app.models import (
-    AuditEvent, Booking, BookingSegment, Business, BusinessWeeklyHours, Customer,
-    Employee, EmployeeTimeOff, EmployeeWeeklyHours, Service, ServiceEmployeeEligibility,
-    ServiceResourceRequirement, User,
+    AuditEvent,
+    Booking,
+    BookingSegment,
+    Business,
+    BusinessWeeklyHours,
+    Customer,
+    Employee,
+    EmployeeTimeOff,
+    EmployeeWeeklyHours,
+    Service,
+    ServiceEmployeeEligibility,
+    ServiceResourceRequirement,
+    User,
 )
 from app.modules.businesses.authorization import require_membership
 from app.modules.identity.router import get_current_user
