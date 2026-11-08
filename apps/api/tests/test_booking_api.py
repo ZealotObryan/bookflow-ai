@@ -107,9 +107,9 @@ def test_booking_creation_holds_slot_and_includes_buffers(db_session, booking_co
     assert result["status"] == "held"
     assert result["total_amount"] == Decimal("5000.00")
     segment = result["segments"][0]
-    assert segment["ends_at"] == start + timedelta(minutes=30)
-    assert segment["reserved_starts_at"] == start - timedelta(minutes=10)
-    assert segment["reserved_ends_at"] == start + timedelta(minutes=40)
+    assert segment["ends_at"].replace(tzinfo=UTC) == start + timedelta(minutes=30)
+    assert segment["reserved_starts_at"].replace(tzinfo=UTC) == start - timedelta(minutes=10)
+    assert segment["reserved_ends_at"].replace(tzinfo=UTC) == start + timedelta(minutes=40)
 
 
 def test_booking_idempotency_prevents_duplicate_records(db_session, booking_context):
