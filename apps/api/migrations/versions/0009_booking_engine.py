@@ -21,7 +21,7 @@ def upgrade() -> None:
     op.execute("UPDATE booking_segments SET reserved_starts_at = starts_at, reserved_ends_at = ends_at")
     op.alter_column("booking_segments", "reserved_starts_at", nullable=False)
     op.alter_column("booking_segments", "reserved_ends_at", nullable=False)
-    op.drop_constraint("ex_booking_segments_employee_no_overlap", "booking_segments", type_="exclude")
+    op.execute("ALTER TABLE booking_segments DROP CONSTRAINT ex_booking_segments_employee_no_overlap")
     op.execute("""
         ALTER TABLE booking_segments
         ADD CONSTRAINT ex_booking_segments_employee_no_overlap
@@ -35,7 +35,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint("ex_booking_segments_employee_no_overlap", "booking_segments", type_="exclude")
+    op.execute("ALTER TABLE booking_segments DROP CONSTRAINT ex_booking_segments_employee_no_overlap")
     op.execute("""
         ALTER TABLE booking_segments
         ADD CONSTRAINT ex_booking_segments_employee_no_overlap
