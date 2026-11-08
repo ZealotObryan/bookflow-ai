@@ -9,8 +9,14 @@ from sqlalchemy.orm import Session
 
 from app.db.base import Base
 from app.models import (
-    Business, BusinessMembership, BusinessWeeklyHours, Customer, Employee,
-    EmployeeWeeklyHours, Service, User,
+    Business,
+    BusinessMembership,
+    BusinessWeeklyHours,
+    Customer,
+    Employee,
+    EmployeeWeeklyHours,
+    Service,
+    User,
 )
 from app.modules.bookings.router import BookingInput, SegmentInput, create_booking
 
