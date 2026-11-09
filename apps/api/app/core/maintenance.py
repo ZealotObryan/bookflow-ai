@@ -55,7 +55,7 @@ def expire_booking_holds(db: Session) -> dict[str, int]:
     """Expire timed-out holds for every business, respecting tenant RLS."""
     now = datetime.now(UTC)
     expired_count = 0
-    businesses = db.scalars(select(Business.id).where(Business.status == "active")).all()
+    businesses = db.scalars(select(Business.id).order_by(Business.id)).all()
     for business_id in businesses:
         set_tenant_context(db, business_id)
         expired_ids = db.scalars(
