@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, CalendarCheck, Check, CheckCircle2,
-  ChevronDown, ChevronRight, Clock3, CreditCard, Download, Ellipsis, Filter, LayoutDashboard,
-  LifeBuoy, Menu, MessageCircle, MoreHorizontal, Plus, Search, Settings, SlidersHorizontal,
+  ArrowUpRight, Bell, CalendarDays, CalendarCheck, Check, CheckCircle2,
+  ChevronDown, ChevronRight, Clock3, CreditCard, Download, LayoutDashboard,
+  LifeBuoy, Menu, MessageCircle, MoreHorizontal, Plus, Search, Settings,
   Sparkles, Users, Wallet, X, Zap, Scissors, BriefcaseBusiness, TrendingUp
 } from "lucide-react";
 
@@ -33,7 +33,7 @@ const seedServices:Service[]=[
 {id:"SV-03",name:"Follow-up session",category:"Consultation",duration:30,price:18000,status:"Active",color:"blue"},
 {id:"SV-04",name:"Manicure & pedicure",category:"Nails",duration:90,price:35000,status:"Active",color:"lilac"},
 {id:"SV-05",name:"Hair styling",category:"Hair",duration:60,price:30000,status:"Draft",color:"mint"}];
-const nav=[
+const nav: {label:string;items:[string,string,typeof LayoutDashboard][]}[]=[
 {label:"WORKSPACE",items:[["Overview","overview",LayoutDashboard],["Calendar","calendar",CalendarDays],["Bookings","bookings",CalendarCheck]]},
 {label:"MANAGE",items:[["Customers","customers",Users],["Services","services",Scissors],["Team & resources","team",BriefcaseBusiness]]},
 {label:"GROW",items:[["Payments","payments",Wallet],["Automations","automations",Zap],["Reports","reports",TrendingUp]]}];
