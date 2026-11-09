@@ -51,6 +51,14 @@ Owners should be able to ask natural-language operational questions such as toda
 
 The AI assistant is an interface, not the system of record. Every consequential action must call a validated backend operation. The backend rechecks permissions, business rules and current state before committing.
 
+### 4.1.1 WhatsApp integration implementation
+
+The customer messaging provider is the official Meta WhatsApp Cloud API. The existing TumaSend integration remains available for phone OTP delivery and is not treated as the business messaging integration.
+
+The first integration foundation includes a server-side Cloud API client for text messages, strict E.164 recipient validation, bounded message length, request timeouts, provider message-ID handling and HMAC-SHA256 signature verification for future webhook delivery. Access tokens, phone-number IDs, app secrets and webhook verification tokens are server-side secrets only; they must never be exposed to the browser or committed to source control.
+
+Next integration steps are business-level WhatsApp account connection, webhook subscription and tenant routing, durable inbound/outbound message records, approved template messaging outside the customer-service window, consent/opt-out handling, delivery status updates, retries and message audit history. Do not enable customer messaging until a Meta app, WhatsApp Business Account, phone number and production credentials have been configured and verified.
+
 ### 4.2 Calendar
 
 Google Calendar is the first calendar integration. Confirmed bookings should sync to connected calendars; calendar events that represent unavailable time should influence availability according to configured sync rules. Support multiple employees and calendars.
