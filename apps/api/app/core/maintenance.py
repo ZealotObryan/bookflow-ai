@@ -4,7 +4,15 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from app.db.session import set_tenant_context
-from app.models import AuditEvent, AuthSession, AuthToken, Booking, BookingSegment, Business, PhoneOtpChallenge
+from app.models import (
+    AuditEvent,
+    AuthSession,
+    AuthToken,
+    Booking,
+    BookingSegment,
+    Business,
+    PhoneOtpChallenge,
+)
 
 
 def purge_expired_auth_material(db: Session) -> dict[str, int]:
