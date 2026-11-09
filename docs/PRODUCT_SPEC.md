@@ -18,6 +18,19 @@ On first setup, a business chooses a category (salon, nail technician, barber, d
 
 WhatsApp should be a first-class interaction channel, especially for booking-led businesses. Customers can enquire, check availability, book, reschedule and cancel through WhatsApp. Owners can use it for permitted operational questions and actions. Selecting WhatsApp priority during onboarding records preference only; it does not imply the integration is connected.
 
+### 2.1 Photography business workflow
+
+Photography is a first-class business category, not a generic creative-services fallback. A photography workspace should support both customer bookings and project tracking, while allowing the owner to select bookings, tracking or both.
+
+- **Shoot types:** weddings, birthdays, portraits, graduations, family sessions, corporate events, conferences, products, commercial campaigns and other custom shoots.
+- **Enquiry and quotation:** capture the client brief, shoot type, date/location, package, deliverables and quotation status.
+- **Booking and payment:** confirm shoot dates, record deposits, track outstanding balances and retain agreed package/pricing details.
+- **Production pipeline:** enquiry received → quotation sent → booking confirmed → deposit paid → shoot completed → editing → client review → delivered/closed.
+- **Client and delivery management:** keep contact details, notes, shot/deliverable expectations, review feedback, delivery links and completion history together.
+- **WhatsApp:** support enquiries, quotation follow-ups, booking confirmations, reminders, balance reminders and delivery notifications through the official integration when connected.
+
+The pipeline is a project workflow as well as a booking workflow: a photographer who does not need public self-booking must still be able to manage shoots and client projects. WhatsApp preference remains separate from provider connection status.
+
 ## 3. Users and roles
 
 - **Business owner:** configures the business, services, staff, policies, integrations and subscription; views reports and manages operations.
