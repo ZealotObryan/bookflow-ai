@@ -192,3 +192,31 @@ class BookingSegment(Base):
     duration_minutes_snapshot: Mapped[int] = mapped_column(Integer, nullable=False)
     price_amount_snapshot: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class BookingSegmentResource(Base):
+    __tablename__ = "booking_segment_resources"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["business_id", "booking_segment_id"],
+            ["booking_segments.business_id", "booking_segments.id"],
+            ondelete="CASCADE",
+            name="fk_booking_segment_resources_segment",
+        ),
+        ForeignKeyConstraint(
+            ["business_id", "resource_id"],
+            ["schedulable_resources.business_id", "schedulable_resources.id"],
+            ondelete="RESTRICT",
+            name="fk_booking_segment_resources_resource",
+        ),
+        CheckConstraint("quantity > 0", name="allocation_quantity_positive"),
+        UniqueConstraint("business_id", "booking_segment_id", "resource_id", name="uq_booking_segment_resource"),
+        Index("ix_booking_segment_resources_resource", "business_id", "resource_id", "booking_segment_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    business_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    booking_segment_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    resource_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

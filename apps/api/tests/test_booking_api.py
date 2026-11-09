@@ -12,10 +12,13 @@ from app.models import (
     Business,
     BusinessMembership,
     BusinessWeeklyHours,
+    BookingSegmentResource,
     Customer,
     Employee,
     EmployeeWeeklyHours,
     Service,
+    SchedulableResource,
+    ServiceResourceRequirement,
     User,
 )
 from app.modules.bookings.availability import get_availability
@@ -221,3 +224,50 @@ def test_optional_employee_service_respects_requested_employee(db_session, booki
 
     assert result["slots"]
     assert all(slot["employee_id"] == employee.id for slot in result["slots"])
+
+
+def test_resource_capacity_is_reserved_with_booking(db_session, booking_context):
+    business, user, customer, employee, service = booking_context
+    resource = SchedulableResource(business_id=business.id, name="Treatment bed", resource_type="bed", capacity=1)
+    db_session.add(resource)
+    db_session.flush()
+    db_session.add(ServiceResourceRequirement(
+        business_id=business.id, service_id=service.id, resource_id=resource.id, quantity=1
+    ))
+    db_session.commit()
+    result = create_booking(
+        business_id=business.id,
+        payload=request_for(customer, service, employee, datetime(2026, 11, 9, 8, tzinfo=UTC), "resource-reservation-01"),
+        user=user, db=db_session,
+    )
+    allocation = db_session.query(BookingSegmentResource).filter_by(
+        business_id=business.id, resource_id=resource.id
+    ).one()
+    assert result["status"] == "held"
+    assert allocation.quantity == 1
+
+
+def test_resource_capacity_prevents_overlapping_booking(db_session, booking_context):
+    business, user, customer, employee, service = booking_context
+    service.buffer_before_minutes = 0
+    service.buffer_after_minutes = 0
+    resource = SchedulableResource(business_id=business.id, name="Consultation room", resource_type="room", capacity=1)
+    db_session.add(resource)
+    db_session.flush()
+    db_session.add(ServiceResourceRequirement(
+        business_id=business.id, service_id=service.id, resource_id=resource.id, quantity=1
+    ))
+    db_session.commit()
+    start = datetime(2026, 11, 9, 8, tzinfo=UTC)
+    create_booking(
+        business_id=business.id,
+        payload=request_for(customer, service, employee, start, "resource-first-01"),
+        user=user, db=db_session,
+    )
+    with pytest.raises(HTTPException) as error:
+        create_booking(
+            business_id=business.id,
+            payload=request_for(customer, service, employee, start + timedelta(minutes=5), "resource-second-01"),
+            user=user, db=db_session,
+        )
+    assert error.value.status_code == 409

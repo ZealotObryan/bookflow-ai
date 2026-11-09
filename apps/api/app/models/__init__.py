@@ -3,6 +3,7 @@ from app.models.auth import AuthSession, AuthToken, PhoneOtpChallenge
 from app.models.booking import (
     Booking,
     BookingSegment,
+    BookingSegmentResource,
     BusinessWeeklyHours,
     Customer,
     EmployeeTimeOff,
@@ -25,6 +26,7 @@ __all__ = [
     "AuthToken",
     "Booking",
     "BookingSegment",
+    "BookingSegmentResource",
     "Business",
     "BusinessInvitation",
     "BusinessMembership",

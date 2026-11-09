@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -14,6 +14,7 @@ from app.models import (
     AuditEvent,
     Booking,
     BookingSegment,
+    BookingSegmentResource,
     Business,
     BusinessWeeklyHours,
     Customer,
@@ -23,6 +24,7 @@ from app.models import (
     Service,
     ServiceEmployeeEligibility,
     ServiceResourceRequirement,
+    SchedulableResource,
     User,
 )
 from app.modules.businesses.authorization import require_membership
@@ -182,12 +184,10 @@ def create_booking(
             ) is None:
                 raise HTTPException(status_code=422, detail="The employee is not eligible for this service")
 
-        resource_needed = db.scalar(select(ServiceResourceRequirement.resource_id).where(
+        resource_requirements = db.scalars(select(ServiceResourceRequirement).where(
             ServiceResourceRequirement.business_id == business.id,
             ServiceResourceRequirement.service_id == service.id,
-        ).limit(1))
-        if resource_needed is not None:
-            raise HTTPException(status_code=409, detail="This service requires resource allocation, which is not enabled yet")
+        ).order_by(ServiceResourceRequirement.resource_id)).all()
 
         start = item.starts_at.astimezone(UTC)
         end = start + timedelta(minutes=service.duration_minutes)
@@ -223,8 +223,58 @@ def create_booking(
         prepared.append({
             "service": service, "employee_id": employee.id if employee else None,
             "start": start, "end": end, "reserved_start": reserved_start, "reserved_end": reserved_end,
+            "resource_requirements": [(r.resource_id, r.quantity) for r in resource_requirements],
         })
         total += Decimal(service.price_amount)
+
+    required_resource_ids = sorted({
+        resource_id for p in prepared for resource_id, _quantity in p["resource_requirements"]
+    }, key=str)
+    locked_resources = db.scalars(
+        select(SchedulableResource)
+        .where(SchedulableResource.business_id == business.id, SchedulableResource.id.in_(required_resource_ids))
+        .order_by(SchedulableResource.id)
+        .with_for_update()
+    ).all() if required_resource_ids else []
+    resources_by_id = {r.id: r for r in locked_resources}
+    if len(resources_by_id) != len(required_resource_ids):
+        raise HTTPException(status_code=409, detail="A required resource is no longer available")
+    for resource in locked_resources:
+        if resource.status != "active":
+            raise HTTPException(status_code=409, detail=f"Required resource {resource.name} is inactive")
+
+    for p in prepared:
+        for resource_id, quantity in p["resource_requirements"]:
+            resource = resources_by_id[resource_id]
+            if quantity > resource.capacity:
+                raise HTTPException(status_code=409, detail=f"Required quantity exceeds capacity for resource {resource.name}")
+            occupied = db.scalar(
+                select(func.coalesce(func.sum(BookingSegmentResource.quantity), 0))
+                .join(BookingSegment,
+                    (BookingSegment.business_id == BookingSegmentResource.business_id)
+                    & (BookingSegment.id == BookingSegmentResource.booking_segment_id))
+                .join(Booking,
+                    (Booking.business_id == BookingSegment.business_id)
+                    & (Booking.id == BookingSegment.booking_id))
+                .where(
+                    BookingSegmentResource.business_id == business.id,
+                    BookingSegmentResource.resource_id == resource_id,
+                    BookingSegment.status.in_(ACTIVE_SEGMENTS),
+                    Booking.status.in_(("held", "confirmed")),
+                    (Booking.status != "held") | (Booking.hold_expires_at.is_(None)) | (Booking.hold_expires_at > now),
+                    BookingSegment.reserved_starts_at < p["reserved_end"],
+                    BookingSegment.reserved_ends_at > p["reserved_start"],
+                )
+            )
+            requested_together = sum(
+                other_quantity
+                for other in prepared
+                if other["reserved_start"] < p["reserved_end"] and other["reserved_end"] > p["reserved_start"]
+                for other_resource_id, other_quantity in other["resource_requirements"]
+                if other_resource_id == resource_id
+            )
+            if occupied + requested_together > resource.capacity:
+                raise HTTPException(status_code=409, detail=f"Resource {resource.name} does not have enough capacity at the requested time")
 
     now = datetime.now(UTC)
     booking = Booking(
@@ -244,7 +294,7 @@ def create_booking(
         db.flush()
         for sequence, p in enumerate(prepared, start=1):
             service = p["service"]
-            db.add(BookingSegment(
+            segment = BookingSegment(
                 business_id=business.id, booking_id=booking.id, service_id=service.id,
                 employee_id=p["employee_id"], sequence_number=sequence,
                 starts_at=p["start"], ends_at=p["end"],
@@ -252,7 +302,14 @@ def create_booking(
                 status="held", service_name_snapshot=service.name,
                 duration_minutes_snapshot=service.duration_minutes,
                 price_amount_snapshot=service.price_amount,
-            ))
+            )
+            db.add(segment)
+            db.flush()
+            for resource_id, quantity in p["resource_requirements"]:
+                db.add(BookingSegmentResource(
+                    business_id=business.id, booking_segment_id=segment.id,
+                    resource_id=resource_id, quantity=quantity,
+                ))
         db.add(AuditEvent(
             business_id=business.id, actor_user_id=user.id, action="booking.held",
             target_type="booking", target_id=str(booking.id),
