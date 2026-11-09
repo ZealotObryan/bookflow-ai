@@ -6,9 +6,9 @@
 
 ## 1. Vision
 
-Make it easy for appointment-based businesses to accept, manage and grow bookings without requiring customers or owners to learn a complicated system. WhatsApp is the conversational front door, the calendar is the operational view, and the web dashboard provides full business control.
+Make it easy for service businesses to manage customer relationships, bookings and everyday operations without forcing every business into the same workflow. The platform serves appointment-led businesses (salons, nail technicians, barbers, designers and tailors, event planners, photographers, fitness and wellness providers, consultants) as well as businesses that mainly need customer and work tracking. WhatsApp is a first-class conversational channel, the calendar is the operational view, and the web dashboard provides full business control.
 
-## 2. Users and roles
+## 2. Business types and onboarding\n\nOn first setup, a business chooses a category (salon, nail technician, barber, designer/tailor, event planner, photographer/creative, fitness/wellness, consultant/professional or other), its primary workflow (bookings, business tracking or both), and its WhatsApp priority (essential, important or not a priority yet). These are configuration hints, not hard product restrictions; a business can change its workflow as it grows.\n\n- **Bookings:** customer-facing availability, appointments, reminders and rescheduling.\n- **Business tracking:** customer directory, projects/work items, schedules, payment tracking, notes and follow-ups without requiring customer self-booking.\n- **Both:** combines appointment management with the broader business workspace.\n\nWhatsApp should be a first-class interaction channel, especially for booking-led businesses. Customers can enquire, check availability, book, reschedule and cancel through WhatsApp. Owners can use it for permitted operational questions and actions. Selecting WhatsApp priority during onboarding records preference only; it does not imply the integration is connected.\n\n## 3. Users and roles
 
 - **Business owner:** configures the business, services, staff, policies, integrations and subscription; views reports and manages operations.
 - **Manager:** manages bookings, staff schedules, customers and operational settings within assigned permissions.
@@ -18,7 +18,7 @@ Make it easy for appointment-based businesses to accept, manage and grow booking
 
 A user may belong to more than one business. Membership and role are scoped to a business.
 
-## 3. Core experiences
+## 4. Core experiences
 
 ### 3.1 WhatsApp
 
@@ -48,7 +48,7 @@ Responsive dashboard capabilities:
 - Integrations, notifications and automation settings
 - Analytics, operational reports and subscription management
 
-## 4. Booking engine — highest priority
+## 5. Booking engine — highest priority
 
 The booking engine must support:
 
@@ -63,17 +63,17 @@ The booking engine must support:
 
 Availability displayed to a customer is provisional until a hold or booking is successfully committed. All booking writes must use database transactions and appropriate constraints/locking. The API returns the committed result; the AI must never invent a slot or claim a booking succeeded before the backend confirms it.
 
-## 5. Payments
+## 6. Payments
 
 Support deposits and full payments with explicit states such as pending, paid, failed, expired, refunded and under review. Evaluate PayChangu and Malipo before selecting a provider.
 
 Provider callbacks must be authenticated, verified and idempotent. Reconcile provider transactions against internal payment records. Customer-uploaded screenshots and AI-generated messages are not acceptable proof of payment.
 
-## 6. Notifications and automation
+## 7. Notifications and automation
 
 Support booking confirmations, reminders, cancellation/reschedule notices, deposit reminders and owner alerts. Background jobs must tolerate retries without sending duplicate messages or creating duplicate side effects.
 
-## 7. Non-functional requirements
+## 8. Non-functional requirements
 
 - Tenant isolation and least-privilege access
 - Secure authentication, authorization and session management
@@ -84,11 +84,11 @@ Support booking confirmations, reminders, cancellation/reschedule notices, depos
 - Maintainable code, automated tests, migrations and operational documentation
 - Data minimization, retention controls and secure handling of personal data
 
-## 8. Initial scope and sequencing
+## 9. Initial scope and sequencing
 
 The first vertical slice should establish the data model, tenant-aware authentication and a reliable booking lifecycle before adding AI automation. WhatsApp and payments are later integrations, not shortcuts around core domain rules.
 
-## 9. Success measures to define during pilot
+## 10. Success measures to define during pilot
 
 - Booking completion rate
 - Booking creation and confirmation latency
