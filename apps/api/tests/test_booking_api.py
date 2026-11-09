@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db.base import Base
 from app.models import (
+    Booking,
     BookingSegmentResource,
     Business,
     BusinessMembership,
@@ -366,3 +367,27 @@ def test_expired_booking_hold_cannot_be_confirmed(db_session, booking_context):
         confirm_booking(business.id, created["id"], user, db_session)
     assert error.value.status_code == 409
     assert booking.status == "expired"
+
+
+
+def test_scheduled_hold_cleanup_expires_booking_and_segments(db_session, booking_context):
+    from app.core.maintenance import expire_booking_holds
+    from app.models import BookingSegment
+
+    business, user, customer, employee, service = booking_context
+    created = create_booking(
+        business_id=business.id,
+        payload=request_for(customer, service, employee, datetime(2026, 11, 9, 8, tzinfo=UTC)),
+        user=user, db=db_session,
+    )
+    booking = db_session.get(Booking, created["id"])
+    booking.hold_expires_at = datetime(2020, 1, 1, tzinfo=UTC)
+    db_session.commit()
+
+    result = expire_booking_holds(db_session)
+    db_session.refresh(booking)
+    segment = db_session.query(BookingSegment).filter_by(booking_id=booking.id).one()
+
+    assert result["expired_bookings"] == 1
+    assert booking.status == "expired"
+    assert segment.status == "cancelled"

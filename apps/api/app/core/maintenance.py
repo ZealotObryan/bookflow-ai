@@ -1,6 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import delete, func, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from app.db.session import set_tenant_context
