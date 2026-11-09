@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 
 from app.db.base import Base
 from app.models import (
+    BookingSegmentResource,
     Business,
     BusinessMembership,
-    BookingSegmentResource,
     BusinessWeeklyHours,
     Customer,
     Employee,
