@@ -6,7 +6,7 @@ Create Date: 2026-11-09
 """
 
 revision = "0011_merge_heads"
-down_revision = ("0010_booking_resource_allocations", "0009_business_profile")
+down_revision = ("0010_booking_resources", "0009_business_profile")
 branch_labels = None
 depends_on = None
 
