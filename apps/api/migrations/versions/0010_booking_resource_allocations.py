@@ -1,6 +1,6 @@
 """Add transactional booking segment resource allocations.
 
-Revision ID: 0010_booking_resource_allocations
+Revision ID: 0010_booking_resources
 Revises: 0009_booking_engine
 """
 from collections.abc import Sequence
@@ -8,7 +8,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0010_booking_resource_allocations"
+revision: str = "0010_booking_resources"
 down_revision: str | None = "0009_booking_engine"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

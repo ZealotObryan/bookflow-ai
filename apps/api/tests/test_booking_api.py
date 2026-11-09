@@ -251,6 +251,7 @@ def test_resource_capacity_prevents_overlapping_booking(db_session, booking_cont
     business, user, customer, employee, service = booking_context
     service.buffer_before_minutes = 0
     service.buffer_after_minutes = 0
+    service.requires_employee = False
     resource = SchedulableResource(business_id=business.id, name="Consultation room", resource_type="room", capacity=1)
     db_session.add(resource)
     db_session.flush()
@@ -259,15 +260,17 @@ def test_resource_capacity_prevents_overlapping_booking(db_session, booking_cont
     ))
     db_session.commit()
     start = datetime(2026, 11, 9, 8, tzinfo=UTC)
-    create_booking(
-        business_id=business.id,
-        payload=request_for(customer, service, employee, start, "resource-first-01"),
-        user=user, db=db_session,
+    first_payload = BookingInput(
+        customer_id=customer.id,
+        idempotency_key="resource-first-01",
+        segments=[SegmentInput(service_id=service.id, employee_id=None, starts_at=start)],
     )
+    second_payload = BookingInput(
+        customer_id=customer.id,
+        idempotency_key="resource-second-01",
+        segments=[SegmentInput(service_id=service.id, employee_id=None, starts_at=start + timedelta(minutes=5))],
+    )
+    create_booking(business_id=business.id, payload=first_payload, user=user, db=db_session)
     with pytest.raises(HTTPException) as error:
-        create_booking(
-            business_id=business.id,
-            payload=request_for(customer, service, employee, start + timedelta(minutes=5), "resource-second-01"),
-            user=user, db=db_session,
-        )
+        create_booking(business_id=business.id, payload=second_payload, user=user, db=db_session)
     assert error.value.status_code == 409
