@@ -9,7 +9,7 @@ import {
   ArrowUpRight, Bell, CalendarDays, CalendarCheck, Check, CheckCircle2,
   ChevronDown, ChevronRight, Clock3, CreditCard, Download, LayoutDashboard,
   LifeBuoy, Menu, MessageCircle, Plus, Search, Settings,
-  Sparkles, Users, Wallet, X, Zap, Scissors, BriefcaseBusiness, TrendingUp, LogOut
+  Sparkles, Users, Wallet, X, Zap, Scissors, BriefcaseBusiness, TrendingUp, LogOut, ClipboardList
 } from "lucide-react";
 
 type WorkspaceProfile={id:string;name:string;business_type:string;workflow_mode:"bookings"|"tracking"|"both";whatsapp_priority:string};
