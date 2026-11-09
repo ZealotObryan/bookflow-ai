@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {useAuth} from "@/components/auth-provider";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowUpRight, Bell, CalendarDays, CalendarCheck, Check, CheckCircle2,
   ChevronDown, ChevronRight, Clock3, CreditCard, Download, LayoutDashboard,
@@ -44,7 +44,17 @@ const localDateISO=(date:Date)=>{const y=date.getFullYear();const m=String(date.
 const dateOffset=(days:number)=>{const date=new Date();date.setDate(date.getDate()+days);return localDateISO(date);};
 function Status({value}:{value:string}){return <span className={"status "+value.toLowerCase()}><i/>{value}</span>;}
 function Field({label,children}:{label:string;children:React.ReactNode}){return <label className="field"><span>{label}</span>{children}</label>;}
-function Modal({title,description,close,children}:{title:string;description:string;close:()=>void;children:React.ReactNode}){return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)close();}}><section className="modal" role="dialog" aria-modal="true"><div className="modal-head"><div><span className="section-overline">BOOKFLOW WORKSPACE</span><h2>{title}</h2><p>{description}</p></div><button className="icon-button" onClick={close}><X size={18}/></button></div>{children}</section></div>;}
+function Modal({title,description,close,children}:{title:string;description:string;close:()=>void;children:React.ReactNode}){
+ const titleId=useId();const descriptionId=useId();const dialogRef=useRef<HTMLElement>(null);const closeRef=useRef(close);closeRef.current=close;
+ useEffect(()=>{
+  const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;const dialog=dialogRef.current;
+  const focusable=()=>dialog?Array.from(dialog.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(el=>!el.hasAttribute("hidden")):[];
+  focusable()[0]?.focus();
+  function onKeyDown(event:KeyboardEvent){if(event.key==="Escape"){event.preventDefault();closeRef.current();return;}if(event.key==="Tab"){const items=focusable();if(!items.length){event.preventDefault();dialog?.focus();return;}const first=items[0];const last=items[items.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}}
+  document.addEventListener("keydown",onKeyDown);return()=>{document.removeEventListener("keydown",onKeyDown);previous?.focus();};
+ },[]);
+ return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)close();}}><section ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} tabIndex={-1}><div className="modal-head"><div><span className="section-overline">BOOKFLOW WORKSPACE</span><h2 id={titleId}>{title}</h2><p id={descriptionId}>{description}</p></div><button className="icon-button" aria-label="Close dialog" onClick={close}><X size={18}/></button></div>{children}</section></div>;
+}
 export default function DashboardPage(){
  const pathname=usePathname();const router=useRouter();const {user,logout}=useAuth();const section=pathname.split("/").filter(Boolean)[1]||"overview";
  const [bookings,setBookings]=useState(seedBookings);const [customers,setCustomers]=useState(seedCustomers);const [services,setServices]=useState(seedServices);
