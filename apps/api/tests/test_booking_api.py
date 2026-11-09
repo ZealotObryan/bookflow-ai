@@ -11,13 +11,13 @@ from app.db.base import Base
 from app.models import (
     Business,
     BusinessMembership,
-    BusinessWeeklyHours,
     BookingSegmentResource,
+    BusinessWeeklyHours,
     Customer,
     Employee,
     EmployeeWeeklyHours,
-    Service,
     SchedulableResource,
+    Service,
     ServiceResourceRequirement,
     User,
 )

@@ -23,8 +23,8 @@ from app.models import (
     EmployeeWeeklyHours,
     Service,
     ServiceEmployeeEligibility,
-    ServiceResourceRequirement,
     SchedulableResource,
+    ServiceResourceRequirement,
     User,
 )
 from app.modules.businesses.authorization import require_membership
