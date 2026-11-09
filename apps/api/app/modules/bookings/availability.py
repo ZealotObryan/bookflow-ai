@@ -15,9 +15,9 @@ from app.models import (
     Employee,
     EmployeeTimeOff,
     EmployeeWeeklyHours,
+    SchedulableResource,
     Service,
     ServiceEmployeeEligibility,
-    SchedulableResource,
     ServiceResourceRequirement,
     User,
 )
