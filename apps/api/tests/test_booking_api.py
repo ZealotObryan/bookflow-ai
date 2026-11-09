@@ -306,3 +306,63 @@ def test_availability_excludes_slots_when_required_resource_is_full(db_session, 
         db=db_session,
     )
     assert all(slot["starts_at"] != booked_start for slot in result["slots"])
+
+
+
+def test_booking_can_be_confirmed_and_hold_is_cleared(db_session, booking_context):
+    from app.modules.bookings.router import confirm_booking
+
+    business, user, customer, employee, service = booking_context
+    created = create_booking(
+        business_id=business.id,
+        payload=request_for(customer, service, employee, datetime(2026, 11, 9, 8, tzinfo=UTC)),
+        user=user, db=db_session,
+    )
+    confirmed = confirm_booking(business.id, created["id"], user, db_session)
+    assert confirmed["status"] == "confirmed"
+    assert confirmed["hold_expires_at"] is None
+    assert db_session.query(BookingSegmentResource).count() == 0
+
+
+def test_confirmed_booking_can_be_cancelled_and_releases_reservations(db_session, booking_context):
+    from app.models import BookingSegment
+    from app.modules.bookings.router import cancel_booking, confirm_booking
+
+    business, user, customer, employee, service = booking_context
+    resource = SchedulableResource(
+        business_id=business.id, name="Room", resource_type="room", capacity=1
+    )
+    db_session.add(resource)
+    db_session.flush()
+    db_session.add(ServiceResourceRequirement(
+        business_id=business.id, service_id=service.id, resource_id=resource.id, quantity=1
+    ))
+    db_session.commit()
+    created = create_booking(
+        business_id=business.id,
+        payload=request_for(customer, service, employee, datetime(2026, 11, 9, 8, tzinfo=UTC)),
+        user=user, db=db_session,
+    )
+    confirm_booking(business.id, created["id"], user, db_session)
+    cancelled = cancel_booking(business.id, created["id"], user, db_session)
+    assert cancelled["status"] == "cancelled"
+    segment = db_session.query(BookingSegment).filter_by(booking_id=created["id"]).one()
+    assert segment.status == "cancelled"
+
+
+def test_expired_booking_hold_cannot_be_confirmed(db_session, booking_context):
+    from app.modules.bookings.router import confirm_booking
+
+    business, user, customer, employee, service = booking_context
+    created = create_booking(
+        business_id=business.id,
+        payload=request_for(customer, service, employee, datetime(2026, 11, 9, 8, tzinfo=UTC)),
+        user=user, db=db_session,
+    )
+    booking = db_session.get(__import__("app.models", fromlist=["Booking"]).Booking, created["id"])
+    booking.hold_expires_at = datetime(2020, 1, 1, tzinfo=UTC)
+    db_session.commit()
+    with pytest.raises(HTTPException) as error:
+        confirm_booking(business.id, created["id"], user, db_session)
+    assert error.value.status_code == 409
+    assert booking.status == "expired"

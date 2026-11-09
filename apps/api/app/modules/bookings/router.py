@@ -324,3 +324,103 @@ def create_booking(
             raise HTTPException(status_code=409, detail="The employee was just booked for that time") from None
         raise HTTPException(status_code=409, detail="The booking conflicts with an existing reservation") from None
     return _response(db, booking)
+
+
+def _transition_booking(
+    business_id: uuid.UUID,
+    booking_id: uuid.UUID,
+    user: User,
+    db: Session,
+    target_status: str,
+) -> dict:
+    business, _membership = require_membership(business_id, user, db)
+    set_tenant_context(db, business.id)
+    booking = db.scalar(
+        select(Booking)
+        .where(Booking.business_id == business.id, Booking.id == booking_id)
+        .with_for_update()
+    )
+    if booking is None:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    now = datetime.now(UTC)
+    if booking.status == "held" and booking.hold_expires_at is not None:
+        expiry = booking.hold_expires_at
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=UTC)
+        if expiry <= now:
+            booking.status = "expired"
+            db.execute(
+                update(BookingSegment)
+                .where(
+                    BookingSegment.business_id == business.id,
+                    BookingSegment.booking_id == booking.id,
+                    BookingSegment.status == "held",
+                )
+                .values(status="cancelled")
+            )
+            db.add(AuditEvent(
+                business_id=business.id, actor_user_id=user.id,
+                action="booking.expired", target_type="booking",
+                target_id=str(booking.id), event_metadata={"source": "lifecycle_transition"},
+            ))
+            db.commit()
+            raise HTTPException(status_code=409, detail="The booking hold has expired")
+    if target_status == "confirmed":
+        if booking.status != "held":
+            raise HTTPException(status_code=409, detail="Only an active hold can be confirmed")
+        booking.status = "confirmed"
+        booking.hold_expires_at = None
+        db.execute(
+            update(BookingSegment)
+            .where(
+                BookingSegment.business_id == business.id,
+                BookingSegment.booking_id == booking.id,
+                BookingSegment.status == "held",
+            )
+            .values(status="confirmed")
+        )
+    elif target_status == "cancelled":
+        if booking.status not in ("held", "confirmed"):
+            raise HTTPException(status_code=409, detail="This booking cannot be cancelled in its current state")
+        booking.status = "cancelled"
+        booking.hold_expires_at = None
+        db.execute(
+            update(BookingSegment)
+            .where(
+                BookingSegment.business_id == business.id,
+                BookingSegment.booking_id == booking.id,
+                BookingSegment.status.in_(("held", "confirmed")),
+            )
+            .values(status="cancelled")
+        )
+    else:
+        raise HTTPException(status_code=500, detail="Unsupported booking transition")
+    db.add(AuditEvent(
+        business_id=business.id, actor_user_id=user.id,
+        action=f"booking.{target_status}", target_type="booking",
+        target_id=str(booking.id), event_metadata={"previous_status": "held" if target_status == "confirmed" else "held_or_confirmed"},
+    ))
+    db.commit()
+    db.refresh(booking)
+    set_tenant_context(db, business.id)
+    return _response(db, booking)
+
+
+@router.post("/{booking_id}/confirm", response_model=None)
+def confirm_booking(
+    business_id: uuid.UUID,
+    booking_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    return _transition_booking(business_id, booking_id, user, db, "confirmed")
+
+
+@router.post("/{booking_id}/cancel", response_model=None)
+def cancel_booking(
+    business_id: uuid.UUID,
+    booking_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    return _transition_booking(business_id, booking_id, user, db, "cancelled")
