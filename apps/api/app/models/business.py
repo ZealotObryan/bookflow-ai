@@ -24,6 +24,16 @@ class Business(Base):
     __table_args__ = (
         CheckConstraint("length(currency) = 3", name="currency_length"),
         CheckConstraint(
+            "business_type IN ('salon', 'nail_tech', 'barber', 'designer_tailor', "
+            "'event_planner', 'photographer', 'fitness_wellness', 'consultant', 'other')",
+            name="business_type",
+        ),
+        CheckConstraint("workflow_mode IN ('bookings', 'tracking', 'both')", name="workflow_mode"),
+        CheckConstraint(
+            "whatsapp_priority IN ('essential', 'important', 'not_now')",
+            name="whatsapp_priority",
+        ),
+        CheckConstraint(
             "status IN ('active', 'suspended', 'closed')",
             name="business_status",
         ),
