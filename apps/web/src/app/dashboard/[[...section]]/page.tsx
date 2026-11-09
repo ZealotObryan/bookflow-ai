@@ -39,7 +39,6 @@ const nav: {label:string;items:[string,string,typeof LayoutDashboard][]}[]=[
 {label:"GROW",items:[["Payments","payments",Wallet],["Automations","automations",Zap],["Reports","reports",TrendingUp]]}];
 const cash=(n:number)=>"MK "+n.toLocaleString("en-US");
 const dateText=(s:string)=>new Date(s+"T12:00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
-const initials=(s:string)=>s.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
 function Status({value}:{value:string}){return <span className={"status "+value.toLowerCase()}><i/>{value}</span>;}
 function Field({label,children}:{label:string;children:React.ReactNode}){return <label className="field"><span>{label}</span>{children}</label>;}
 function Modal({title,description,close,children}:{title:string;description:string;close:()=>void;children:React.ReactNode}){return <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)close();}}><section className="modal" role="dialog" aria-modal="true"><div className="modal-head"><div><span className="section-overline">BOOKFLOW WORKSPACE</span><h2>{title}</h2><p>{description}</p></div><button className="icon-button" onClick={close}><X size={18}/></button></div>{children}</section></div>;}
