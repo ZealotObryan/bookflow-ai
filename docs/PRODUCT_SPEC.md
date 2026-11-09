@@ -71,6 +71,14 @@ Responsive dashboard capabilities:
 - Integrations, notifications and automation settings
 - Analytics, operational reports and subscription management
 
+### 4.4 Projects and work management
+
+Projects are a first-class workflow for businesses whose work spans multiple days or deliverables. A project belongs to one business and records a title, client contact, project type, description, due date, workflow stage, quoted amount, deposit and amount paid. The initial API supports tenant-scoped creation, listing and updates, with audit events and PostgreSQL row-level security.
+
+Standard stages are enquiry, quoted, booked, in progress, editing, client review, delivered and cancelled. Businesses may use these stages for photography shoots, event plans, tailoring/design orders and other client work. Booking records remain separate from projects until a deliberate linking model is introduced; the project module must not silently create bookings or payment transactions.
+
+The first dashboard release provides project creation, client/job overview, due dates, payment visibility and stage updates. Subsequent increments should add project tasks, files/delivery links, activity history, reusable templates and explicit links to bookings and verified payment records.
+
 ## 5. Booking engine — highest priority
 
 The booking engine must support:
