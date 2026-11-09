@@ -274,3 +274,35 @@ def test_resource_capacity_prevents_overlapping_booking(db_session, booking_cont
     with pytest.raises(HTTPException) as error:
         create_booking(business_id=business.id, payload=second_payload, user=user, db=db_session)
     assert error.value.status_code == 409
+
+
+def test_availability_excludes_slots_when_required_resource_is_full(db_session, booking_context):
+    business, user, customer, employee, service = booking_context
+    service.buffer_before_minutes = 0
+    service.buffer_after_minutes = 0
+    resource = SchedulableResource(
+        business_id=business.id, name="One treatment bed", resource_type="bed", capacity=1
+    )
+    db_session.add(resource)
+    db_session.flush()
+    db_session.add(ServiceResourceRequirement(
+        business_id=business.id, service_id=service.id, resource_id=resource.id, quantity=1
+    ))
+    db_session.commit()
+    booked_start = datetime(2026, 11, 9, 8, tzinfo=UTC)
+    create_booking(
+        business_id=business.id,
+        payload=request_for(customer, service, employee, booked_start, "availability-resource-full"),
+        user=user,
+        db=db_session,
+    )
+    result = get_availability(
+        business_id=business.id,
+        service_id=service.id,
+        target_date=date(2026, 11, 9),
+        employee_id=employee.id,
+        slot_interval_minutes=30,
+        user=user,
+        db=db_session,
+    )
+    assert all(slot["starts_at"] != booked_start for slot in result["slots"])

@@ -3,19 +3,21 @@ from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
 from app.models import (
     Booking,
     BookingSegment,
+    BookingSegmentResource,
     BusinessWeeklyHours,
     Employee,
     EmployeeTimeOff,
     EmployeeWeeklyHours,
     Service,
     ServiceEmployeeEligibility,
+    SchedulableResource,
     ServiceResourceRequirement,
     User,
 )
@@ -60,17 +62,23 @@ def get_availability(
     if service is None:
         raise HTTPException(status_code=404, detail="Service not found")
 
-    resource_needed = db.scalar(
-        select(ServiceResourceRequirement.resource_id)
-        .where(
+    resource_requirements = db.scalars(
+        select(ServiceResourceRequirement).where(
             ServiceResourceRequirement.business_id == business.id,
             ServiceResourceRequirement.service_id == service.id,
+        ).order_by(ServiceResourceRequirement.resource_id)
+    ).all()
+    required_resource_ids = [requirement.resource_id for requirement in resource_requirements]
+    resources = db.scalars(
+        select(SchedulableResource).where(
+            SchedulableResource.business_id == business.id,
+            SchedulableResource.id.in_(required_resource_ids),
+            SchedulableResource.status == "active",
         )
-        .limit(1)
-    )
-    if resource_needed is not None:
-        return {"date": target_date, "timezone": business.timezone, "slots": [],
-                "unavailable_reason": "Resource allocation is not enabled for this service yet"}
+    ).all() if required_resource_ids else []
+    resources_by_id = {resource.id: resource for resource in resources}
+    if len(resources_by_id) != len(required_resource_ids):
+        return {"date": target_date, "timezone": business.timezone, "slots": []}
 
     business_hours = db.get(BusinessWeeklyHours, (business.id, target_date.weekday()))
     if (
@@ -179,6 +187,41 @@ def get_availability(
                     )
                     if conflict:
                         continue
+                resource_available = True
+                for requirement in resource_requirements:
+                    resource = resources_by_id[requirement.resource_id]
+                    if requirement.quantity > resource.capacity:
+                        resource_available = False
+                        break
+                    occupied = db.scalar(
+                        select(func.coalesce(func.sum(BookingSegmentResource.quantity), 0))
+                        .join(
+                            BookingSegment,
+                            (BookingSegment.business_id == BookingSegmentResource.business_id)
+                            & (BookingSegment.id == BookingSegmentResource.booking_segment_id),
+                        )
+                        .join(
+                            Booking,
+                            (Booking.business_id == BookingSegment.business_id)
+                            & (Booking.id == BookingSegment.booking_id),
+                        )
+                        .where(
+                            BookingSegmentResource.business_id == business.id,
+                            BookingSegmentResource.resource_id == requirement.resource_id,
+                            BookingSegment.status.in_(ACTIVE_SEGMENTS),
+                            Booking.status.in_(("held", "confirmed")),
+                            (Booking.status != "held")
+                            | (Booking.hold_expires_at.is_(None))
+                            | (Booking.hold_expires_at > now),
+                            BookingSegment.reserved_starts_at < reserved_end_utc,
+                            BookingSegment.reserved_ends_at > reserved_start_utc,
+                        )
+                    )
+                    if occupied + requirement.quantity > resource.capacity:
+                        resource_available = False
+                        break
+                if not resource_available:
+                    continue
                 slots.append({
                     "starts_at": start_utc,
                     "ends_at": end_utc,
