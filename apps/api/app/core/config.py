@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     tumasend_base_url: str = "https://gateway.tumasend.com"
     tumasend_sms_sender_id: str | None = None
     tumasend_webhook_secret: str | None = None
+    meta_whatsapp_access_token: str | None = None
+    meta_whatsapp_phone_number_id: str | None = None
+    meta_whatsapp_app_secret: str | None = None
+    meta_whatsapp_verify_token: str | None = None
+    meta_whatsapp_graph_api_version: str = "v22.0"
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../../.env"),
