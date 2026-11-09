@@ -31,6 +31,9 @@ class Business(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(160), nullable=False)
+    business_type: Mapped[str] = mapped_column(String(40), nullable=False, default="other", server_default="other")
+    workflow_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="both", server_default="both")
+    whatsapp_priority: Mapped[str] = mapped_column(String(20), nullable=False, default="important", server_default="important")
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     timezone: Mapped[str] = mapped_column(
         String(64), nullable=False, default="Africa/Blantyre", server_default="Africa/Blantyre"
