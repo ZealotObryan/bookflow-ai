@@ -8,7 +8,17 @@
 
 Make it easy for service businesses to manage customer relationships, bookings and everyday operations without forcing every business into the same workflow. The platform serves appointment-led businesses (salons, nail technicians, barbers, designers and tailors, event planners, photographers, fitness and wellness providers, consultants) as well as businesses that mainly need customer and work tracking. WhatsApp is a first-class conversational channel, the calendar is the operational view, and the web dashboard provides full business control.
 
-## 2. Business types and onboarding\n\nOn first setup, a business chooses a category (salon, nail technician, barber, designer/tailor, event planner, photographer/creative, fitness/wellness, consultant/professional or other), its primary workflow (bookings, business tracking or both), and its WhatsApp priority (essential, important or not a priority yet). These are configuration hints, not hard product restrictions; a business can change its workflow as it grows.\n\n- **Bookings:** customer-facing availability, appointments, reminders and rescheduling.\n- **Business tracking:** customer directory, projects/work items, schedules, payment tracking, notes and follow-ups without requiring customer self-booking.\n- **Both:** combines appointment management with the broader business workspace.\n\nWhatsApp should be a first-class interaction channel, especially for booking-led businesses. Customers can enquire, check availability, book, reschedule and cancel through WhatsApp. Owners can use it for permitted operational questions and actions. Selecting WhatsApp priority during onboarding records preference only; it does not imply the integration is connected.\n\n## 3. Users and roles
+## 2. Business types and onboarding
+
+On first setup, a business chooses a category (salon, nail technician, barber, designer/tailor, event planner, photographer/creative, fitness/wellness, consultant/professional or other), its primary workflow (bookings, business tracking or both), and its WhatsApp priority (essential, important or not a priority yet). These are configuration hints, not hard product restrictions; a business can change its workflow as it grows.
+
+- **Bookings:** customer-facing availability, appointments, reminders and rescheduling.
+- **Business tracking:** customer directory, projects/work items, schedules, payment tracking, notes and follow-ups without requiring customer self-booking.
+- **Both:** combines appointment management with the broader business workspace.
+
+WhatsApp should be a first-class interaction channel, especially for booking-led businesses. Customers can enquire, check availability, book, reschedule and cancel through WhatsApp. Owners can use it for permitted operational questions and actions. Selecting WhatsApp priority during onboarding records preference only; it does not imply the integration is connected.
+
+## 3. Users and roles
 
 - **Business owner:** configures the business, services, staff, policies, integrations and subscription; views reports and manages operations.
 - **Manager:** manages bookings, staff schedules, customers and operational settings within assigned permissions.
