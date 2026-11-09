@@ -1,14 +1,15 @@
 # BookFlow AI
 
-**AI-powered appointment management for service businesses.**
+**AI-powered booking and business management for service businesses and client-work teams.**
 
-BookFlow AI is a multi-tenant SaaS platform that helps appointment-based businesses manage bookings, customers, staff, payments and communications through WhatsApp, a calendar and a responsive web dashboard.
+BookFlow AI is a multi-tenant SaaS platform for salons, nail technicians, barbers, photographers, event planners, designers, tailors, consultants and other businesses. It brings together bookings, clients, projects, work pipelines, payment tracking and customer communications through WhatsApp and a responsive web dashboard.
 
 ## Product direction
 
 - **WhatsApp:** customer booking conversations and owner operations, powered by an AI assistant.
 - **Calendar:** reliable scheduling with Google Calendar integration.
-- **Web dashboard:** business setup, services, staff, bookings, customers, payments and reporting.
+- **Web dashboard:** business setup, services, staff, bookings, customers, projects, payments and reporting.
+- **Projects and work:** track client jobs from enquiry and quotation through production, review, delivery and payment.
 - **Booking engine:** the authoritative source for availability, holds and confirmed appointments.
 - **Payments:** provider-backed payment status and reconciliation; screenshots are never treated as proof of payment.
 
@@ -108,4 +109,4 @@ The first migration creates users, businesses and business memberships. It does 
 
 ## Status
 
-Application scaffolding and the first identity/tenancy database migration are in progress. No production deployment is active.
+Identity, tenant-aware business onboarding, booking foundations, project/work tracking foundations and the first WhatsApp Cloud API client are implemented on the development branch. The dashboard still contains preview data in some areas; WhatsApp account connection, inbound webhook processing, live messaging workflows and payment-provider integration remain in progress. No production deployment is active.
