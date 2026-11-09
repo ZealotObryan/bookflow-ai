@@ -30,7 +30,7 @@ A user may belong to more than one business. Membership and role are scoped to a
 
 ## 4. Core experiences
 
-### 3.1 WhatsApp
+### 4.1 WhatsApp
 
 Use the official Meta WhatsApp Business Platform. Customer capabilities include service and price enquiries, availability enquiries, booking, rescheduling, cancellation, confirmations and reminders.
 
@@ -38,13 +38,13 @@ Owners should be able to ask natural-language operational questions such as toda
 
 The AI assistant is an interface, not the system of record. Every consequential action must call a validated backend operation. The backend rechecks permissions, business rules and current state before committing.
 
-### 3.2 Calendar
+### 4.2 Calendar
 
 Google Calendar is the first calendar integration. Confirmed bookings should sync to connected calendars; calendar events that represent unavailable time should influence availability according to configured sync rules. Support multiple employees and calendars.
 
 PostgreSQL remains authoritative for BookFlow bookings, customer records and payment state. Calendar synchronization must be retryable and idempotent, with visible sync status and conflict handling.
 
-### 3.3 Web dashboard
+### 4.3 Web dashboard
 
 Responsive dashboard capabilities:
 
