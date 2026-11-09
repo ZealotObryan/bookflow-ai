@@ -1,21 +1,20 @@
 from datetime import datetime
-from uuid import UUID
-
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
 
 
 class BusinessCreateRequest(BaseModel):
     name: str = Field(min_length=2, max_length=160)
-    business_type: str = Field(default="other", min_length=2, max_length=40)
+    business_type: Literal["salon", "nail_tech", "barber", "designer_tailor", "event_planner", "photographer", "fitness_wellness", "consultant", "other"] = "other"
     workflow_mode: Literal["bookings", "tracking", "both"] = "both"
     whatsapp_priority: Literal["essential", "important", "not_now"] = "important"
 
 
 class BusinessProfileUpdateRequest(BaseModel):
     name: str = Field(min_length=2, max_length=160)
-    business_type: str = Field(min_length=2, max_length=40)
+    business_type: Literal["salon", "nail_tech", "barber", "designer_tailor", "event_planner", "photographer", "fitness_wellness", "consultant", "other"]
     workflow_mode: Literal["bookings", "tracking", "both"]
     whatsapp_priority: Literal["essential", "important", "not_now"]
 
