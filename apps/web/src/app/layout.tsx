@@ -1,19 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-
 export const metadata: Metadata = {
-  title: "BookFlow AI",
-  description: "Appointment management, made simpler.",
+  title: { default: "BookFlow AI — Your business, in flow", template: "%s · BookFlow AI" },
+  description: "Appointments, customers and everyday operations in one connected workspace.",
+  applicationName: "BookFlow AI",
 };
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
-}
+export default function RootLayout({children}:{children:React.ReactNode}) { return <html lang="en"><body>{children}</body></html>; }
