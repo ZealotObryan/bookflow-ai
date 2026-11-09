@@ -22,6 +22,7 @@ from app.models import (
 from app.modules.businesses.authorization import require_membership, require_roles
 from app.modules.businesses.schemas import (
     BusinessCreateRequest,
+    BusinessProfileUpdateRequest,
     BusinessResponse,
     InvitationAcceptRequest,
     InvitationCreateRequest,
@@ -52,6 +53,9 @@ def _membership_response(business: Business, membership: BusinessMembership) -> 
     return BusinessResponse(
         id=business.id,
         name=business.name,
+        business_type=business.business_type,
+        workflow_mode=business.workflow_mode,
+        whatsapp_priority=business.whatsapp_priority,
         slug=business.slug,
         timezone=business.timezone,
         currency=business.currency,
@@ -85,6 +89,9 @@ def create_business(
         raise HTTPException(status_code=403, detail="Verify your email before creating a business")
     business = Business(
         name=payload.name.strip(),
+        business_type=payload.business_type,
+        workflow_mode=payload.workflow_mode,
+        whatsapp_priority=payload.whatsapp_priority,
         slug=f"{_slug_base(payload.name)}-{secrets.token_hex(4)}",
     )
     membership = BusinessMembership(user_id=user.id, role="owner", status="active")
@@ -101,6 +108,29 @@ def create_business(
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=409, detail="Business could not be created") from None
+    return _membership_response(business, membership)
+
+
+@router.patch("/{business_id}/profile", response_model=BusinessResponse)
+def update_business_profile(
+    business_id: uuid.UUID,
+    payload: BusinessProfileUpdateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> BusinessResponse:
+    business, membership = require_roles(business_id, {"owner", "admin", "manager"}, user, db)
+    set_tenant_context(db, business.id)
+    business.name = payload.name.strip()
+    business.business_type = payload.business_type
+    business.workflow_mode = payload.workflow_mode
+    business.whatsapp_priority = payload.whatsapp_priority
+    _audit(db, business_id=business.id, actor_id=user.id, action="business.profile_updated",
+           target_type="business", target_id=str(business.id),
+           metadata={"business_type": business.business_type,
+                     "workflow_mode": business.workflow_mode,
+                     "whatsapp_priority": business.whatsapp_priority})
+    db.commit()
+    db.refresh(business)
     return _membership_response(business, membership)
 
 
