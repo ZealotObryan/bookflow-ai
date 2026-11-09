@@ -18,6 +18,7 @@ from app.models.catalog import (
     ServiceResourceRequirement,
 )
 from app.models.invitation import BusinessInvitation
+from app.models.project import Project
 from app.models.user import User
 
 __all__ = [
@@ -36,6 +37,7 @@ __all__ = [
     "EmployeeTimeOff",
     "EmployeeWeeklyHours",
     "PhoneOtpChallenge",
+    "Project",
     "SchedulableResource",
     "Service",
     "ServiceEmployeeEligibility",
