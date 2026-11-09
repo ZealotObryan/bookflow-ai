@@ -7,9 +7,9 @@ const features = [
   { icon: Sparkles, title: "An assistant for the busy work", copy: "Bring everyday business tasks into one calm workspace, with AI designed to work within your rules." },
 ];
 const steps = [
-  ["01", "Set up your business", "Add your services, working hours, team and resources."],
-  ["02", "Let customers book", "Manage appointments from one clear calendar and booking list."],
-  ["03", "Stay on top of every detail", "Keep customer records, payments and follow-ups together."],
+  ["01", "Set up your business", "Set up the details that matter to your business — services, packages, projects, working hours or team."],
+  ["02", "Let customers book", "Accept bookings when you need them, or simply keep your clients, schedules and work organised in one place."],
+  ["03", "Stay on top of every detail", "Keep customer records, schedules, payments and follow-ups together."],
 ];
 export default function HomePage() {
   return <main className="marketing-shell">
@@ -22,7 +22,7 @@ export default function HomePage() {
       <div className="hero-copy-block">
         <div className="eyebrow-pill"><span className="live-dot"/> THE BUSINESS WORKSPACE FOR SERVICE TEAMS</div>
         <h1>Make every<br/><em>appointment</em><br/>feel effortless.</h1>
-        <p className="marketing-lede">Less time coordinating. More time doing the work you love. BookFlow brings your calendar, customers and daily operations into one beautifully simple place.</p>
+        <p className="marketing-lede">Less time coordinating. More time doing the work you love. BookFlow brings appointments, customers and everyday business tracking into one simple workspace — whether you run a salon, work as a nail tech or barber, design and tailor, plan events, or offer another service.</p>
         <div className="hero-cta-row"><Link className="button button-primary" href="/dashboard">Explore the workspace <ArrowUpRight size={17}/></Link><a className="text-link" href="#features">See what’s inside <span>↓</span></a></div>
         <div className="hero-trust"><span><ShieldCheck size={15}/> Built around your business rules</span><span><Check size={15}/> Designed for growing teams</span></div>
       </div>
@@ -42,7 +42,7 @@ export default function HomePage() {
       </div>
     </section>
     <section className="value-strip"><span>ONE CONNECTED WORKSPACE</span><div><CalendarDays size={17}/> Calendar</div><div><Users size={17}/> Customers</div><div><MessageCircle size={17}/> Conversations</div><div><Zap size={17}/> Automations</div></section>
-    <section className="feature-section" id="features"><div className="section-intro"><span className="section-overline">THE BOOKFLOW DIFFERENCE</span><h2>Everything in sync.<br/><em>Nothing slipping through.</em></h2><p>All the moving parts of a service business, brought together in a workspace that feels natural from day one.</p></div><div className="feature-grid">{features.map((feature,index)=>{const Icon=feature.icon;return <article className="feature-card" key={feature.title}><div className="feature-icon"><Icon size={20}/></div><span className="feature-index">0{index+1}</span><h3>{feature.title}</h3><p>{feature.copy}</p><Link href="/dashboard">Explore workspace <ArrowUpRight size={14}/></Link></article>;})}</div></section>
+    <section className="feature-section" id="features"><div className="section-intro"><span className="section-overline">THE BOOKFLOW DIFFERENCE</span><h2>Everything in sync.<br/><em>Nothing slipping through.</em></h2><p>From salons, nail technicians and barbers to designers, tailors and event planners, BookFlow adapts to the way you work. Take bookings through WhatsApp, manage appointments in your dashboard, or use it to keep customers and business activity organised.</p></div><div className="feature-grid">{features.map((feature,index)=>{const Icon=feature.icon;return <article className="feature-card" key={feature.title}><div className="feature-icon"><Icon size={20}/></div><span className="feature-index">0{index+1}</span><h3>{feature.title}</h3><p>{feature.copy}</p><Link href="/dashboard">Explore workspace <ArrowUpRight size={14}/></Link></article>;})}</div></section>
     <section className="how-section" id="how-it-works"><div className="how-heading"><span className="section-overline">A CLEARER WAY TO WORK</span><h2>Simple to start.<br/><em>Ready to grow.</em></h2></div><div className="steps-grid">{steps.map(([number,title,copy])=><article className="step-card" key={number}><span>{number}</span><h3>{title}</h3><p>{copy}</p></article>)}</div></section>
     <section className="closing-cta"><div><span className="section-overline">YOUR BUSINESS, IN FLOW</span><h2>Make room for<br/><em>what matters.</em></h2></div><Link className="button button-light" href="/dashboard">Take a look inside <ArrowUpRight size={17}/></Link></section>
     <footer className="marketing-footer"><Link className="brand-lockup" href="/"><span className="brand-symbol"><CalendarDays size={17}/></span><span>bookflow<span className="brand-period">.</span></span><span className="brand-ai">AI</span></Link><span>Appointments, without the back-and-forth.</span><span>© {new Date().getFullYear()} BookFlow AI</span></footer>
