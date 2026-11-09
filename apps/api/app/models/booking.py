@@ -172,6 +172,7 @@ class BookingSegment(Base):
             "status IN ('held', 'confirmed', 'in_progress', 'completed', 'cancelled')",
             name="segment_status",
         ),
+        UniqueConstraint("business_id", "id", name="uq_booking_segments_business_id_id"),
         UniqueConstraint("business_id", "booking_id", "sequence_number", name="uq_booking_segments_sequence"),
         Index("ix_booking_segments_business_employee_start", "business_id", "employee_id", "starts_at"),
         Index("ix_booking_segments_business_booking", "business_id", "booking_id"),

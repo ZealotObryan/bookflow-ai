@@ -15,6 +15,9 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    op.create_unique_constraint(
+        "uq_booking_segments_business_id_id", "booking_segments", ["business_id", "id"]
+    )
     op.create_table(
         "booking_segment_resources",
         sa.Column("id", sa.Uuid(), nullable=False),
@@ -45,3 +48,6 @@ def downgrade() -> None:
     op.execute("ALTER TABLE booking_segment_resources DISABLE ROW LEVEL SECURITY")
     op.drop_index("ix_booking_segment_resources_resource", table_name="booking_segment_resources")
     op.drop_table("booking_segment_resources")
+    op.drop_constraint(
+        "uq_booking_segments_business_id_id", "booking_segments", type_="unique"
+    )
