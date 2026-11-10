@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -30,7 +30,7 @@ class PublicBusinessProfile(BaseModel):
 
 
 @router.get("/{slug}", response_model=PublicBusinessProfile)
-def get_public_business(slug: str, db: Session = __import__("fastapi").Depends(get_db)):
+def get_public_business(slug: str, db: Session = Depends(get_db)):
     business = db.scalar(
         select(Business).where(
             Business.slug == slug,
