@@ -419,3 +419,32 @@ def test_booking_list_is_scoped_to_authenticated_business(db_session, booking_co
     assert rows[0]["customer_id"] == customer.id
     assert rows[0]["customer_name"] == customer.display_name
     assert rows[0]["segments"][0]["service_name"] == service.name
+
+
+def test_scheduling_options_only_returns_active_business_resources(db_session, booking_context):
+    from app.models import SchedulableResource
+    from app.modules.records.router import list_scheduling_options
+
+    business, user, _customer, employee, _service = booking_context
+    inactive_employee = Employee(
+        business_id=business.id, display_name="Inactive teammate", status="inactive"
+    )
+    resource = SchedulableResource(
+        business_id=business.id, name="Studio room", resource_type="room", capacity=1
+    )
+    db_session.add_all([inactive_employee, resource])
+    db_session.commit()
+
+    result = list_scheduling_options(
+        business_id=business.id,
+        user=user,
+        db=db_session,
+    )
+
+    assert result["employees"] == [{"id": employee.id, "display_name": employee.display_name}]
+    assert result["resources"] == [{
+        "id": resource.id,
+        "name": resource.name,
+        "resource_type": resource.resource_type,
+        "capacity": resource.capacity,
+    }]
