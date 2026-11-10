@@ -424,3 +424,34 @@ def cancel_booking(
     db: Session = Depends(get_db),
 ) -> dict:
     return _transition_booking(business_id, booking_id, user, db, "cancelled")
+
+
+@router.get("", response_model=None)
+def list_bookings(
+    business_id: uuid.UUID,
+    limit: int = 100,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """List a business's bookings for its authenticated team workspace."""
+    if limit < 1 or limit > 250:
+        raise HTTPException(status_code=422, detail="limit must be between 1 and 250")
+    business, _membership = require_membership(business_id, user, db)
+    set_tenant_context(db, business.id)
+    rows = db.execute(
+        select(Booking, Customer.display_name)
+        .join(
+            Customer,
+            (Customer.business_id == Booking.business_id)
+            & (Customer.id == Booking.customer_id),
+        )
+        .where(Booking.business_id == business.id)
+        .order_by(Booking.starts_at.desc())
+        .limit(limit)
+    ).all()
+    results: list[dict] = []
+    for booking, customer_name in rows:
+        item = _response(db, booking)
+        item["customer_name"] = customer_name
+        results.append(item)
+    return results
