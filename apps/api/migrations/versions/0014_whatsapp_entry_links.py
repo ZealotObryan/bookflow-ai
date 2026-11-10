@@ -36,9 +36,33 @@ def upgrade() -> None:
         USING (business_id = NULLIF(current_setting('app.current_business_id', true), '')::uuid)
         WITH CHECK (business_id = NULLIF(current_setting('app.current_business_id', true), '')::uuid)
     """)
+    op.execute("""
+        CREATE FUNCTION resolve_whatsapp_entry_business(p_token_hash text)
+        RETURNS uuid
+        LANGUAGE sql
+        STABLE
+        SECURITY DEFINER
+        SET search_path = public, pg_temp
+        AS $$
+            SELECT l.business_id
+            FROM whatsapp_entry_links AS l
+            JOIN businesses AS b ON b.id = l.business_id
+            JOIN business_whatsapp_settings AS s ON s.business_id = b.id
+            WHERE l.token_hash = p_token_hash
+              AND l.revoked_at IS NULL
+              AND l.expires_at > now()
+              AND b.status = 'active'
+              AND s.assistant_enabled = true
+            LIMIT 1
+        $$
+    """)
+    op.execute("REVOKE ALL ON FUNCTION resolve_whatsapp_entry_business(text) FROM PUBLIC")
+    op.execute("GRANT EXECUTE ON FUNCTION resolve_whatsapp_entry_business(text) TO PUBLIC")
+
 
 
 def downgrade() -> None:
+    op.execute("DROP FUNCTION IF EXISTS resolve_whatsapp_entry_business(text)")
     op.execute("DROP POLICY IF EXISTS tenant_isolation ON whatsapp_entry_links")
     op.execute("ALTER TABLE whatsapp_entry_links NO FORCE ROW LEVEL SECURITY")
     op.execute("ALTER TABLE whatsapp_entry_links DISABLE ROW LEVEL SECURITY")
