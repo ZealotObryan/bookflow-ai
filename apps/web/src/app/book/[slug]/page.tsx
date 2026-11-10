@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { API_BASE } from "@/lib/api";
 
 type PublicService = {
@@ -98,13 +99,13 @@ export default function PublicBookingPage() {
   }, [business, selectedService, date, slug]);
 
   if (loading) return <main className="marketing-shell" style={{ paddingTop: 100 }}><p>Loading booking page…</p></main>;
-  if (error && !business) return <main className="marketing-shell" style={{ paddingTop: 100 }}><h1>Booking page unavailable</h1><p>{error}</p><a className="text-link" href="/">Back to BookFlow</a></main>;
+  if (error && !business) return <main className="marketing-shell" style={{ paddingTop: 100 }}><h1>Booking page unavailable</h1><p>{error}</p><Link className="text-link" href="/">Back to BookFlow</Link></main>;
 
   const service = business?.services.find((item) => item.id === selectedService);
   return (
     <main className="marketing-shell" style={{ maxWidth: 760, paddingBottom: 80 }}>
       <header className="marketing-nav">
-        <a className="brand-lockup" href="/"><span className="brand-symbol">B</span><span>BookFlow<span className="brand-period">.</span></span><span className="brand-ai">Ai</span></a>
+        <Link className="brand-lockup" href="/"><span className="brand-symbol">B</span><span>BookFlow<span className="brand-period">.</span></span><span className="brand-ai">Ai</span></Link>
         <span className="nav-login">SECURE ONLINE BOOKING</span>
       </header>
       <section style={{ padding: "64px 0 28px" }}>
