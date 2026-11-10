@@ -51,6 +51,23 @@ Owners should be able to ask natural-language operational questions such as toda
 
 The AI assistant is an interface, not the system of record. Every consequential action must call a validated backend operation. The backend rechecks permissions, business rules and current state before committing.
 
+### 4.1.3 Dual-channel WhatsApp experience
+
+BookFlow supports two customer communication paths from the outset:
+
+1. **Shared BookFlow assistant:** customers enter through a business-specific signed link or QR code and message BookFlow's centrally managed WhatsApp Business Platform number. The assistant resolves the business context, captures enquiries and can initiate booking actions only through the existing validated booking API.
+2. **Business-owned WhatsApp:** customers can click through to a business's own WhatsApp number using a pre-filled message. The business handles that conversation itself; BookFlow can still manage booking records, customer details, manual notes and follow-up tasks. A click-to-chat link does not grant BookFlow access to the conversation.
+
+An optional third capability allows a business to connect its own WhatsApp Business Account through Meta Embedded Signup after the required approvals. This can enable authorised automation or inbox synchronisation within the limits of Meta's APIs. It is not required to use BookFlow and must never be represented as connected until provisioning is verified.
+
+The shared assistant must use signed, expiring, opaque business-routing tokens. It must not trust tenant identifiers supplied in message text or unsigned URL parameters. All resulting records remain tenant-scoped. Customers must be told which business they are contacting and that the assistant is operated by BookFlow on that business's behalf.
+
+Business settings will include assistant enquiry availability, greeting, services and public prices, operating hours, booking confirmation policy (automatic after validated customer confirmation, or owner approval), notification recipients, business-owned WhatsApp click-to-chat details and optional official account connection status.
+
+The assistant is not the system of record. It must check current availability before offering slots and must wait for a successful booking API response before claiming that a booking is confirmed. It must collect only necessary customer information, record relevant consent, honour opt-outs and apply Meta's messaging-window and approved-template rules.
+
+A central BookFlow number can receive only messages sent to that platform-owned number. It cannot read private conversations between customers and businesses using their own WhatsApp accounts. Do not scrape WhatsApp Web, automate personal accounts or use unofficial clients. See [WhatsApp Channel Strategy](./WHATSAPP_CHANNEL_STRATEGY.md) for the complete channel model and delivery phases.
+
 ### 4.1.1 WhatsApp integration implementation
 
 The customer messaging provider is the official Meta WhatsApp Cloud API. The existing TumaSend integration remains available for phone OTP delivery and is not treated as the business messaging integration.
