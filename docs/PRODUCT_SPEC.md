@@ -59,6 +59,20 @@ The first integration foundation includes a server-side Cloud API client for tex
 
 Next integration steps are business-level WhatsApp account connection, webhook subscription and tenant routing, durable inbound/outbound message records, approved template messaging outside the customer-service window, consent/opt-out handling, delivery status updates, retries and message audit history. Do not enable customer messaging until a Meta app, WhatsApp Business Account, phone number and production credentials have been configured and verified.
 
+#### 4.1.2 WhatsApp Business App coexistence and Embedded Signup
+
+BookFlow AI must use Meta Embedded Signup for business-owned WhatsApp accounts. For numbers already active in the WhatsApp Business mobile app, the signup launch must explicitly request the Business App onboarding feature (Meta's `whatsapp_business_app_onboarding` feature type). Never send an existing app number through the ordinary phone-number registration path as a substitute: that can initiate a migration and interrupt app use.
+
+The coexistence flow is conditional on Meta's eligibility and account review. A developer app existing in Development mode is not, by itself, proof that BookFlow AI is approved as a Tech Provider or that a particular phone number can use coexistence. Before enabling the customer-facing connect action, configure Facebook Login for Business and a WhatsApp Embedded Signup configuration, obtain the required Meta permissions and app review/advanced access, and complete the applicable Tech Provider onboarding requirements. Keep all Meta app IDs, configuration IDs, solution IDs, app secrets, verification tokens and access tokens in server-side environment configuration or encrypted storage; never put secrets in frontend environment variables.
+
+The Embedded Signup client must request an authorization code for server-side exchange and collect the WABA ID and phone-number ID from the documented signup completion event. The server must validate the authenticated BookFlow business owner/admin, exchange the code server-side, validate the resulting account identifiers against Meta, encrypt any retained token using a dedicated Fernet key, and store one connection per business. Token exchange and WABA/phone-number provisioning must be idempotent. A failed or incomplete signup must not mark the business as connected.
+
+For coexistence, subscribe to and process the relevant WhatsApp Business Account webhook fields, including `account_update`, `history`, `smb_app_state_sync` and `smb_message_echoes`, in addition to ordinary message and message-status events. Verify `X-Hub-Signature-256` against the raw request body before accepting POST events; verify the GET challenge using the configured webhook verify token. Route every event by the verified phone-number/WABA mapping, not by untrusted payload tenant IDs. Persist webhook event IDs or stable deduplication keys before acknowledging delivery.
+
+The UI must show distinct states: not configured, setup required, pending Meta approval, connecting, connected, attention required and disconnected. It must never imply that selecting WhatsApp as an onboarding preference means an account is connected. A coexistence connection must display that the mobile app remains available, while also explaining Meta's applicable messaging windows, template rules and history-sync limitations.
+
+Current integration configuration names are `META_WHATSAPP_APP_ID`, `META_WHATSAPP_APP_SECRET`, `META_WHATSAPP_VERIFY_TOKEN`, `META_WHATSAPP_GRAPH_API_VERSION`, `META_WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID`, `META_WHATSAPP_SOLUTION_ID` (when required by the approved provider setup), and `META_WHATSAPP_TOKEN_ENCRYPTION_KEY`. The encryption key must be generated independently from the OTP encryption key and stored only in the backend secret manager.
+
 ### 4.2 Calendar
 
 Google Calendar is the first calendar integration. Confirmed bookings should sync to connected calendars; calendar events that represent unavailable time should influence availability according to configured sync rules. Support multiple employees and calendars.
