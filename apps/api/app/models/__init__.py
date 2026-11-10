@@ -10,7 +10,6 @@ from app.models.booking import (
     EmployeeWeeklyHours,
 )
 from app.models.business import Business, BusinessMembership
-from app.models.communication import BusinessCommunicationSettings
 from app.models.catalog import (
     Employee,
     SchedulableResource,
@@ -18,6 +17,7 @@ from app.models.catalog import (
     ServiceEmployeeEligibility,
     ServiceResourceRequirement,
 )
+from app.models.communication import BusinessCommunicationSettings
 from app.models.invitation import BusinessInvitation
 from app.models.project import Project
 from app.models.user import User
