@@ -171,7 +171,7 @@ def test_availability_returns_only_valid_employee_slots(db_session, booking_cont
     result = get_availability(
         business_id=business.id,
         service_id=service.id,
-        target_date=date(2026, 11, 9),
+        target_date=date(2026, 11, 16),
         employee_id=None,
         slot_interval_minutes=30,
         user=user,
@@ -197,7 +197,7 @@ def test_availability_excludes_existing_employee_hold(db_session, booking_contex
     result = get_availability(
         business_id=business.id,
         service_id=service.id,
-        target_date=date(2026, 11, 9),
+        target_date=date(2026, 11, 16),
         employee_id=employee.id,
         slot_interval_minutes=30,
         user=user,
@@ -216,7 +216,7 @@ def test_optional_employee_service_respects_requested_employee(db_session, booki
     result = get_availability(
         business_id=business.id,
         service_id=service.id,
-        target_date=date(2026, 11, 9),
+        target_date=date(2026, 11, 16),
         employee_id=employee.id,
         slot_interval_minutes=30,
         user=user,
@@ -300,7 +300,7 @@ def test_availability_excludes_slots_when_required_resource_is_full(db_session, 
     result = get_availability(
         business_id=business.id,
         service_id=service.id,
-        target_date=date(2026, 11, 9),
+        target_date=date(2026, 11, 16),
         employee_id=employee.id,
         slot_interval_minutes=30,
         user=user,
