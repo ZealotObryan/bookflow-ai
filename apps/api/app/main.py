@@ -11,6 +11,7 @@ from app.modules.bookings.router import router as bookings_router
 from app.modules.businesses.router import router as businesses_router
 from app.modules.identity.router import router as identity_router
 from app.modules.projects.router import router as projects_router
+from app.modules.public_booking.router import router as public_booking_router
 from app.modules.records.router import router as records_router
 from app.modules.whatsapp.entry_links import router as whatsapp_entry_router
 from app.modules.whatsapp.router import router as whatsapp_router
@@ -62,6 +63,7 @@ app.include_router(projects_router, prefix="/api/v1")
 app.include_router(records_router, prefix="/api/v1")
 app.include_router(whatsapp_router, prefix="/api/v1")
 app.include_router(whatsapp_entry_router, prefix="/api/v1")
+app.include_router(public_booking_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["Operations"])
