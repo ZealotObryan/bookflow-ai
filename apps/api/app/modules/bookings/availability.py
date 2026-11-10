@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db, set_tenant_context
 from app.models import (
     Booking,
+    Business,
     BookingSegment,
     BookingSegmentResource,
     BusinessWeeklyHours,
@@ -45,7 +46,7 @@ def get_availability(
     db: Session = Depends(get_db),
 ) -> dict:
     if user is None:
-        business = db.get(__import__("app.models", fromlist=["Business"]).Business, business_id)
+        business = db.get(Business, business_id)
         if business is None or business.status != "active" or business.workflow_mode not in ("bookings", "both"):
             raise HTTPException(status_code=404, detail="Public booking page not found")
     else:
