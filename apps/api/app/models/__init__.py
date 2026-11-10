@@ -10,6 +10,7 @@ from app.models.booking import (
     EmployeeWeeklyHours,
 )
 from app.models.business import Business, BusinessMembership
+from app.models.communication import BusinessCommunicationSettings
 from app.models.catalog import (
     Employee,
     SchedulableResource,
@@ -33,6 +34,7 @@ __all__ = [
     "Business",
     "BusinessInvitation",
     "BusinessMembership",
+    "BusinessCommunicationSettings",
     "BusinessWhatsAppSettings",
     "WhatsAppEntryLink",
     "BusinessWeeklyHours",
