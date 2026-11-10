@@ -36,9 +36,13 @@ class Settings(BaseSettings):
     tumasend_webhook_secret: str | None = None
     meta_whatsapp_access_token: str | None = None
     meta_whatsapp_phone_number_id: str | None = None
+    meta_whatsapp_app_id: str | None = None
     meta_whatsapp_app_secret: str | None = None
     meta_whatsapp_verify_token: str | None = None
     meta_whatsapp_graph_api_version: str = "v22.0"
+    meta_whatsapp_embedded_signup_config_id: str | None = None
+    meta_whatsapp_solution_id: str | None = None
+    meta_whatsapp_token_encryption_key: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../../.env"),
@@ -60,6 +64,11 @@ class Settings(BaseSettings):
             Fernet(self.otp_encryption_key.encode("ascii"))
         except (ValueError, TypeError, InvalidToken, binascii.Error):
             raise ValueError("OTP_ENCRYPTION_KEY must be a valid Fernet key") from None
+        if self.meta_whatsapp_token_encryption_key:
+            try:
+                Fernet(self.meta_whatsapp_token_encryption_key.encode("ascii"))
+            except (ValueError, TypeError, InvalidToken, binascii.Error):
+                raise ValueError("META_WHATSAPP_TOKEN_ENCRYPTION_KEY must be a valid Fernet key") from None
 
         if self.environment.lower() == "production":
             secrets = {
