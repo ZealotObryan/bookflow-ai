@@ -10,8 +10,8 @@ from app.db.session import get_db, set_tenant_context
 from app.models import (
     Booking,
     BookingSegment,
-    Business,
     BookingSegmentResource,
+    Business,
     BusinessWeeklyHours,
     Employee,
     EmployeeTimeOff,
