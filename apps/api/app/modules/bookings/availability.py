@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db, set_tenant_context
 from app.models import (
     Booking,
-    Business,
     BookingSegment,
+    Business,
     BookingSegmentResource,
     BusinessWeeklyHours,
     Employee,
