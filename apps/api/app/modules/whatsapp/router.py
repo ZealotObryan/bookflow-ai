@@ -49,6 +49,7 @@ def update_whatsapp_settings(
         db.add(settings)
     for field, value in payload.model_dump().items():
         setattr(settings, field, value)
+    db.flush()
     db.add(AuditEvent(
         business_id=business.id,
         actor_user_id=user.id,
