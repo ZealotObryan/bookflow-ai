@@ -14,7 +14,7 @@ const steps = [
 export default function HomePage() {
   return <main className="marketing-shell">
     <header className="marketing-nav">
-      <Link className="brand-lockup" href="/"><span className="brand-symbol"><CalendarDays size={18}/></span><span>bookflow<span className="brand-period">.</span></span><span className="brand-ai">AI</span></Link>
+      <Link className="brand-lockup" href="/"><span className="brand-symbol"><CalendarDays size={18}/></span><span>BookFlow<span className="brand-period">.</span></span><span className="brand-ai">AI</span></Link>
       <nav className="marketing-links"><a href="#features">Features</a><a href="#how-it-works">How it works</a></nav>
       <div className="marketing-actions"><Link className="nav-login" href="/login">Log in</Link><Link className="button button-dark button-small" href="/dashboard">Explore workspace <ArrowUpRight size={15}/></Link></div>
     </header>
@@ -45,6 +45,6 @@ export default function HomePage() {
     <section className="feature-section" id="features"><div className="section-intro"><span className="section-overline">THE BOOKFLOW DIFFERENCE</span><h2>Everything in sync.<br/><em>Nothing slipping through.</em></h2><p>From salons, nail technicians and barbers to designers, tailors and event planners, BookFlow adapts to the way you work. Take bookings through WhatsApp, manage appointments in your dashboard, or use it to keep customers and business activity organised.</p></div><div className="feature-grid">{features.map((feature,index)=>{const Icon=feature.icon;return <article className="feature-card" key={feature.title}><div className="feature-icon"><Icon size={20}/></div><span className="feature-index">0{index+1}</span><h3>{feature.title}</h3><p>{feature.copy}</p><Link href="/dashboard">Explore workspace <ArrowUpRight size={14}/></Link></article>;})}</div></section>
     <section className="how-section" id="how-it-works"><div className="how-heading"><span className="section-overline">A CLEARER WAY TO WORK</span><h2>Simple to start.<br/><em>Ready to grow.</em></h2></div><div className="steps-grid">{steps.map(([number,title,copy])=><article className="step-card" key={number}><span>{number}</span><h3>{title}</h3><p>{copy}</p></article>)}</div></section>
     <section className="closing-cta"><div><span className="section-overline">YOUR BUSINESS, IN FLOW</span><h2>Make room for<br/><em>what matters.</em></h2></div><Link className="button button-light" href="/dashboard">Take a look inside <ArrowUpRight size={17}/></Link></section>
-    <footer className="marketing-footer"><Link className="brand-lockup" href="/"><span className="brand-symbol"><CalendarDays size={17}/></span><span>bookflow<span className="brand-period">.</span></span><span className="brand-ai">AI</span></Link><span>Appointments, without the back-and-forth.</span><span>© {new Date().getFullYear()} BookFlow AI</span></footer>
+    <footer className="marketing-footer"><Link className="brand-lockup" href="/"><span className="brand-symbol"><CalendarDays size={17}/></span><span>BookFlow<span className="brand-period">.</span></span><span className="brand-ai">AI</span></Link><span>Appointments, without the back-and-forth.</span><span>© {new Date().getFullYear()} BookFlow Ai</span><span className="developer-credit">Designed &amp; developed by <strong>O’Brien Sibande</strong></span></footer>
   </main>;
 }
