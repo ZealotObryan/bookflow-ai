@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
-from app.models import AuditEvent, Customer, Service, User
+from app.models import AuditEvent, Customer, Employee, SchedulableResource, Service, User
 from app.modules.businesses.authorization import require_membership, require_roles
 from app.modules.identity.router import get_current_user
 from app.modules.records.schemas import (
@@ -116,3 +116,36 @@ def update_service(business_id: uuid.UUID, service_id: uuid.UUID, payload: Servi
     db.commit()
     db.refresh(service)
     return service
+
+
+@router.get("/scheduling-options")
+def list_scheduling_options(
+    business_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    require_membership(business_id, user, db)
+    set_tenant_context(db, business_id)
+    employees = db.scalars(
+        select(Employee).where(
+            Employee.business_id == business_id,
+            Employee.status == "active",
+        ).order_by(Employee.display_name.asc())
+    ).all()
+    resources = db.scalars(
+        select(SchedulableResource).where(
+            SchedulableResource.business_id == business_id,
+            SchedulableResource.status == "active",
+        ).order_by(SchedulableResource.name.asc())
+    ).all()
+    return {
+        "employees": [
+            {"id": employee.id, "display_name": employee.display_name}
+            for employee in employees
+        ],
+        "resources": [
+            {"id": resource.id, "name": resource.name, "resource_type": resource.resource_type,
+             "capacity": resource.capacity}
+            for resource in resources
+        ],
+    }
