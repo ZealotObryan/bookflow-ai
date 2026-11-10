@@ -9,8 +9,12 @@ from app.models import AuditEvent, Customer, Service, User
 from app.modules.businesses.authorization import require_membership, require_roles
 from app.modules.identity.router import get_current_user
 from app.modules.records.schemas import (
-    CustomerCreate, CustomerResponse, CustomerUpdate,
-    ServiceCreate, ServiceResponse, ServiceUpdate,
+    CustomerCreate,
+    CustomerResponse,
+    CustomerUpdate,
+    ServiceCreate,
+    ServiceResponse,
+    ServiceUpdate,
 )
 
 router = APIRouter(prefix="/businesses/{business_id}", tags=["Business records"])
