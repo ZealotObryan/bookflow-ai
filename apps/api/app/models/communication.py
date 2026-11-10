@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid, func
+from sqlalchemy import (\n    Boolean,\n    CheckConstraint,\n    DateTime,\n    ForeignKey,\n    String,\n    Text,\n    UniqueConstraint,\n    Uuid,\n    func,\n)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
