@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
@@ -98,24 +98,22 @@ def resolve_entry_link(
         raise HTTPException(status_code=404, detail="Entry link is invalid or expired")
     token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
     now = datetime.now(UTC)
-    row = db.execute(
-        select(WhatsAppEntryLink, Business, BusinessWhatsAppSettings)
-        .join(Business, Business.id == WhatsAppEntryLink.business_id)
-        .join(
-            BusinessWhatsAppSettings,
-            BusinessWhatsAppSettings.business_id == Business.id,
-        )
-        .where(
-            WhatsAppEntryLink.token_hash == token_hash,
-            WhatsAppEntryLink.revoked_at.is_(None),
-            WhatsAppEntryLink.expires_at > now,
-            Business.status == "active",
+    business_id = db.scalar(
+        text("SELECT resolve_whatsapp_entry_business(:token_hash)"),
+        {"token_hash": token_hash},
+    )
+    if business_id is None:
+        raise HTTPException(status_code=404, detail="Entry link is invalid or expired")
+    set_tenant_context(db, business_id)
+    business = db.get(Business, business_id)
+    settings = db.scalar(
+        select(BusinessWhatsAppSettings).where(
+            BusinessWhatsAppSettings.business_id == business_id,
             BusinessWhatsAppSettings.assistant_enabled.is_(True),
         )
-    ).first()
-    if row is None:
+    )
+    if business is None or settings is None:
         raise HTTPException(status_code=404, detail="Entry link is invalid or expired")
-    _link, business, settings = row
     return WhatsAppEntryResolution(
         business_id=business.id,
         business_name=business.name,
