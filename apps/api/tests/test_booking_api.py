@@ -391,3 +391,31 @@ def test_scheduled_hold_cleanup_expires_booking_and_segments(db_session, booking
     assert result["expired_bookings"] == 1
     assert booking.status == "expired"
     assert segment.status == "cancelled"
+
+
+def test_booking_list_is_scoped_to_authenticated_business(db_session, booking_context):
+    from app.modules.bookings.router import list_bookings
+
+    business, user, customer, employee, service = booking_context
+    created = create_booking(
+        business_id=business.id,
+        payload=request_for(
+            customer, service, employee, datetime(2026, 11, 9, 8, tzinfo=UTC),
+            "booking-list-test-0001",
+        ),
+        user=user,
+        db=db_session,
+    )
+
+    rows = list_bookings(
+        business_id=business.id,
+        limit=100,
+        user=user,
+        db=db_session,
+    )
+
+    assert len(rows) == 1
+    assert rows[0]["id"] == created["id"]
+    assert rows[0]["customer_id"] == customer.id
+    assert rows[0]["customer_name"] == customer.display_name
+    assert rows[0]["segments"][0]["service_name"] == service.name
