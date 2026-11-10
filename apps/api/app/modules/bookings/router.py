@@ -64,6 +64,7 @@ def _response(db: Session, booking: Booking) -> dict:
     ).all()
     return {
         "id": booking.id,
+        "booking_reference": f"BF-{booking.id.hex[:10].upper()}",
         "customer_id": booking.customer_id,
         "status": booking.status,
         "starts_at": booking.starts_at,
