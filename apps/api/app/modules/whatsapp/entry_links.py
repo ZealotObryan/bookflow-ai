@@ -97,7 +97,6 @@ def resolve_entry_link(
     if len(token) < 32 or len(token) > 128:
         raise HTTPException(status_code=404, detail="Entry link is invalid or expired")
     token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-    now = datetime.now(UTC)
     business_id = db.scalar(
         text("SELECT resolve_whatsapp_entry_business(:token_hash)"),
         {"token_hash": token_hash},
