@@ -41,10 +41,15 @@ def get_availability(
     target_date: date = Query(alias="date"),
     employee_id: uuid.UUID | None = None,
     slot_interval_minutes: int = Query(default=15, ge=5, le=60),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
-    business, _membership = require_membership(business_id, user, db)
+    if user is None:
+        business = db.get(__import__("app.models", fromlist=["Business"]).Business, business_id)
+        if business is None or business.status != "active" or business.workflow_mode not in ("bookings", "both"):
+            raise HTTPException(status_code=404, detail="Public booking page not found")
+    else:
+        business, _membership = require_membership(business_id, user, db)
     set_tenant_context(db, business.id)
 
     try:
