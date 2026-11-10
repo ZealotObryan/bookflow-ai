@@ -110,6 +110,8 @@ def test_booking_creation_holds_slot_and_includes_buffers(db_session, booking_co
     )
 
     assert result["status"] == "held"
+    assert result["booking_reference"].startswith("BF-")
+    assert len(result["booking_reference"]) == 13
     assert result["total_amount"] == Decimal("5000.00")
     segment = result["segments"][0]
     assert segment["ends_at"].replace(tzinfo=UTC) == start + timedelta(minutes=30)
