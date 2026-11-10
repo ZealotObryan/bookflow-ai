@@ -9,6 +9,7 @@ from app.core.rate_limit import close_redis
 from app.modules.bookings.availability import router as availability_router
 from app.modules.bookings.router import router as bookings_router
 from app.modules.businesses.router import router as businesses_router
+from app.modules.businesses.communication_router import router as communication_router
 from app.modules.identity.router import router as identity_router
 from app.modules.projects.router import router as projects_router
 from app.modules.public_booking.router import router as public_booking_router
@@ -57,6 +58,7 @@ async def security_headers(request, call_next):
 
 app.include_router(identity_router, prefix="/api/v1")
 app.include_router(businesses_router, prefix="/api/v1")
+app.include_router(communication_router, prefix="/api/v1")
 app.include_router(bookings_router, prefix="/api/v1")
 app.include_router(availability_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
