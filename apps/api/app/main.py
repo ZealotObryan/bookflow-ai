@@ -8,8 +8,8 @@ from app.core.config import get_settings
 from app.core.rate_limit import close_redis
 from app.modules.bookings.availability import router as availability_router
 from app.modules.bookings.router import router as bookings_router
-from app.modules.businesses.router import router as businesses_router
 from app.modules.businesses.communication_router import router as communication_router
+from app.modules.businesses.router import router as businesses_router
 from app.modules.identity.router import router as identity_router
 from app.modules.projects.router import router as projects_router
 from app.modules.public_booking.router import router as public_booking_router
