@@ -190,6 +190,8 @@ def create_booking(
         ).order_by(ServiceResourceRequirement.resource_id)).all()
 
         start = item.starts_at.astimezone(UTC)
+        if start <= now:
+            raise HTTPException(status_code=409, detail="The requested appointment time must be in the future")
         end = start + timedelta(minutes=service.duration_minutes)
         reserved_start = start - timedelta(minutes=service.buffer_before_minutes)
         reserved_end = end + timedelta(minutes=service.buffer_after_minutes)
