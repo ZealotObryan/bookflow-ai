@@ -21,7 +21,7 @@ type Service={id:string;name:string;category:string;duration:number;price:number
 
 type ApiCustomer={id:string;display_name:string;email:string|null;phone_e164:string|null;notes:string|null;created_at:string};
 type ApiService={id:string;name:string;description:string|null;duration_minutes:number;price_amount:string|number;requires_employee:boolean;status:"active"|"inactive";created_at:string;updated_at:string};
-\ntype ProjectStatus="enquiry"|"quoted"|"booked"|"in_progress"|"editing"|"review"|"delivered"|"cancelled";
+type ProjectStatus="enquiry"|"quoted"|"booked"|"in_progress"|"editing"|"review"|"delivered"|"cancelled";
 type Project={id:string;title:string;client_name:string;client_phone:string|null;client_email:string|null;project_type:string;status:ProjectStatus;description:string|null;due_date:string|null;quoted_amount:string;deposit_amount:string;amount_paid:string;currency:string};
 const seedBookings:Booking[]=[
 {id:"BK-1048",customer:"Amina Banda",service:"Hair consultation",employee:"Thoko M.",date:"2026-11-09",time:"09:00",amount:25000,status:"Confirmed",color:"sage"},
