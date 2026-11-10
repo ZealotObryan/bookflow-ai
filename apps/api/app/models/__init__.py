@@ -20,6 +20,7 @@ from app.models.catalog import (
 from app.models.invitation import BusinessInvitation
 from app.models.project import Project
 from app.models.user import User
+from app.models.whatsapp_entry_link import WhatsAppEntryLink
 from app.models.whatsapp_settings import BusinessWhatsAppSettings
 
 __all__ = [
@@ -33,6 +34,7 @@ __all__ = [
     "BusinessInvitation",
     "BusinessMembership",
     "BusinessWhatsAppSettings",
+    "WhatsAppEntryLink",
     "BusinessWeeklyHours",
     "Customer",
     "Employee",
