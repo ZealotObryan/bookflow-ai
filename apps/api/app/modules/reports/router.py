@@ -4,7 +4,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
@@ -70,7 +70,7 @@ def get_business_report(
         select(
             func.date(func.timezone(business.timezone, Booking.starts_at)),
             func.count(Booking.id),
-            func.sum(func.cast(Booking.status == "confirmed", type_=func.count(Booking.id).type)),
+            func.sum(case((Booking.status == "confirmed", 1), else_=0)),
         )
         .where(
             Booking.business_id == business.id,
