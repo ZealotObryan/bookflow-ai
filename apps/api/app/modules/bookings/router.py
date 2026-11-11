@@ -120,14 +120,13 @@ def _check_hours(db: Session, business: Business, employee_id: uuid.UUID | None,
             raise HTTPException(status_code=409, detail="The employee is not available for the full reserved interval")
 
 
-@router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
-def create_booking(
-    business_id: uuid.UUID,
+def create_booking_for_business(
+    business: Business,
     payload: BookingInput,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    business, _membership = require_membership(business_id, user, db)
+    actor_user_id: uuid.UUID | None,
+    db: Session,
+) -> dict:
+    """Shared booking creation engine for authenticated and verified public flows."""
     set_tenant_context(db, business.id)
     now = datetime.now(UTC)
     expired_ids = select(Booking.id).where(
@@ -314,7 +313,7 @@ def create_booking(
                     resource_id=resource_id, quantity=quantity,
                 ))
         db.add(AuditEvent(
-            business_id=business.id, actor_user_id=user.id, action="booking.held",
+            business_id=business.id, actor_user_id=actor_user_id, action="booking.held",
             target_type="booking", target_id=str(booking.id),
             event_metadata={"segment_count": len(prepared), "total_amount": str(total)},
         ))
@@ -327,6 +326,17 @@ def create_booking(
             raise HTTPException(status_code=409, detail="The employee was just booked for that time") from None
         raise HTTPException(status_code=409, detail="The booking conflicts with an existing reservation") from None
     return _response(db, booking)
+
+
+@router.post("", response_model=None, status_code=status.HTTP_201_CREATED)
+def create_booking(
+    business_id: uuid.UUID,
+    payload: BookingInput,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    business, _membership = require_membership(business_id, user, db)
+    return create_booking_for_business(business, payload, user.id, db)
 
 
 def _transition_booking(
