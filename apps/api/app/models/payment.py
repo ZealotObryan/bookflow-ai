@@ -10,8 +10,8 @@ from sqlalchemy import (
     Index,
     Numeric,
     String,
-    Uuid,
     UniqueConstraint,
+    Uuid,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
