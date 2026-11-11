@@ -15,6 +15,7 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    op.create_unique_constraint("uq_projects_business_id_id", "projects", ["business_id", "id"])
     op.create_table(
         "payments",
         sa.Column("id", sa.Uuid(), nullable=False),
@@ -68,3 +69,4 @@ def downgrade() -> None:
     op.drop_index("ix_payments_business_status", table_name="payments")
     op.drop_index("ix_payments_business_created", table_name="payments")
     op.drop_table("payments")
+    op.drop_constraint("uq_projects_business_id_id", "projects", type_="unique")
