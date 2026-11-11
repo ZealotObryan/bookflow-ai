@@ -11,6 +11,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Uuid,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -33,6 +34,7 @@ class Payment(Base):
         Index("ix_payments_business_status", "business_id", "status"),
         Index("ix_payments_booking", "business_id", "booking_id"),
         Index("ix_payments_project", "business_id", "project_id"),
+        UniqueConstraint("business_id", "provider", "provider_reference", name="uq_payments_provider_reference"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
