@@ -24,12 +24,10 @@ class Settings(BaseSettings):
     email_verification_hours: int = 24
     password_reset_minutes: int = 15
     frontend_base_url: str = "http://localhost:3000"
-    smtp_host: str | None = None
-    smtp_port: int = 587
-    smtp_username: str | None = None
-    smtp_password: str | None = None
-    smtp_from_email: str | None = None
-    smtp_use_ssl: bool = False
+    resend_api_key: str | None = None
+    resend_from_email: str = "onboarding@resend.dev"
+    resend_test_recipient: str | None = None
+    resend_test_mode: bool = True
     tumasend_whatsapp_api_key: str | None = None
     tumasend_sms_api_key: str | None = None
     tumasend_base_url: str = "https://gateway.tumasend.com"
@@ -121,8 +119,10 @@ class Settings(BaseSettings):
                 )
             if not self.frontend_base_url.startswith("https://"):
                 raise ValueError("Production FRONTEND_BASE_URL must use HTTPS")
-            if not all([self.smtp_host, self.smtp_username, self.smtp_password, self.smtp_from_email]):
-                raise ValueError("Production requires configured transactional SMTP credentials")
+            if not all([self.resend_api_key, self.resend_from_email]):
+                raise ValueError("Production requires configured Resend API credentials")
+            if self.resend_test_mode and not self.resend_test_recipient:
+                raise ValueError("RESEND_TEST_RECIPIENT is required while RESEND_TEST_MODE is enabled")
         return self
 
 
