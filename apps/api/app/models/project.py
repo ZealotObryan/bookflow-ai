@@ -10,8 +10,8 @@ from sqlalchemy import (
     Index,
     Numeric,
     String,
-    UniqueConstraint,
     Text,
+    UniqueConstraint,
     Uuid,
     func,
 )
