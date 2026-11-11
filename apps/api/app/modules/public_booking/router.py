@@ -30,6 +30,7 @@ class PublicBookingSubmission(BaseModel):
     customer_phone: str = Field(min_length=8, max_length=20)
     customer_email: EmailStr | None = None
     service_id: uuid.UUID
+    employee_id: uuid.UUID | None = None
     starts_at: str
     idempotency_key: str = Field(min_length=16, max_length=100)
     turnstile_token: str = Field(min_length=1, max_length=2048)
@@ -158,7 +159,7 @@ async def submit_public_booking(slug: str, payload: PublicBookingSubmission, req
         customer = Customer(business_id=business.id, display_name=payload.customer_name.strip(), phone_e164=payload.customer_phone, email=str(payload.customer_email).lower() if payload.customer_email else None)
         db.add(customer)
         db.flush()
-    booking_payload = BookingInput(customer_id=customer.id, segments=[SegmentInput(service_id=service.id, employee_id=None, starts_at=payload.starts_at)], idempotency_key=payload.idempotency_key, notes=payload.notes)
+    booking_payload = BookingInput(customer_id=customer.id, segments=[SegmentInput(service_id=service.id, employee_id=payload.employee_id, starts_at=payload.starts_at)], idempotency_key=payload.idempotency_key, notes=payload.notes)
     result = create_booking_for_business(business=business, payload=booking_payload, actor_user_id=None, db=db)
     return PublicBookingReceipt(booking_reference=result['booking_reference'], status=result['status'], message='Your request has been received. The business must confirm your appointment.', starts_at=result['starts_at'].isoformat(), hold_expires_at=result['hold_expires_at'].isoformat() if result['hold_expires_at'] else None)
 
