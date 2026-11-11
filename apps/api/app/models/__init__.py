@@ -20,6 +20,7 @@ from app.models.catalog import (
 from app.models.communication import BusinessCommunicationSettings
 from app.models.invitation import BusinessInvitation
 from app.models.onboarding import BusinessOnboardingProgress
+from app.models.payment import Payment
 from app.models.project import Project
 from app.models.user import User
 from app.models.whatsapp_entry_link import WhatsAppEntryLink
@@ -44,6 +45,7 @@ __all__ = [
     "Employee",
     "EmployeeTimeOff",
     "EmployeeWeeklyHours",
+    "Payment",
     "PhoneOtpChallenge",
     "Project",
     "SchedulableResource",
