@@ -73,14 +73,7 @@ def record_manual_payment(
             raise HTTPException(status_code=404, detail="Project not found")
         if target.status == "cancelled":
             raise HTTPException(status_code=409, detail="Payments cannot be recorded against a cancelled project")
-        already_paid = db.scalar(
-            select(func.coalesce(func.sum(Payment.amount), 0)).where(
-                Payment.business_id == business.id,
-                Payment.project_id == target.id,
-                Payment.status == "succeeded",
-            )
-        ) or 0
-        if target.amount_paid + already_paid + payload.amount > target.quoted_amount:
+        if target.amount_paid + payload.amount > target.quoted_amount:
             raise HTTPException(status_code=422, detail="Payment would exceed the project quote")
         target.amount_paid += payload.amount
         target_type = "project"
