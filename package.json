@@ -1,0 +1,15 @@
+{
+  "name": "bookflow-ai",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=bookflow-web"
+  },
+  "dependencies": {
+    "next": "15.5.18",
+    "react": "19.1.7",
+    "react-dom": "19.1.7"
+  }
+}
