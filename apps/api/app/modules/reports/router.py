@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -8,7 +8,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
-from app.models import Booking, Business, Project, User
+from app.models import Booking, Project, User
 from app.modules.businesses.authorization import require_membership
 from app.modules.identity.router import get_current_user
 from app.modules.reports.schemas import BusinessReportResponse, DailyActivity
