@@ -1,5 +1,6 @@
 import binascii
 from functools import lru_cache
+from urllib.parse import parse_qs, urlsplit
 
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import model_validator
@@ -86,10 +87,38 @@ class Settings(BaseSettings):
                 )
                 if len(value) < 32 or value.lower().startswith(placeholders) or is_sample_fernet:
                     raise ValueError(f"Production requires a unique high-entropy {name}")
-            if not self.redis_url.startswith("rediss://") or "@" not in self.redis_url:
-                raise ValueError("Production REDIS_URL must use TLS and authenticated Redis credentials")
-            if "sslmode=verify-full" not in self.database_url:
-                raise ValueError("Production DATABASE_URL must use PostgreSQL TLS with server certificate verification (sslmode=verify-full)")
+            redis_url = urlsplit(self.redis_url)
+            redis_authenticated = bool(redis_url.password)
+            redis_uses_tls = redis_url.scheme == "rediss" and redis_authenticated
+            redis_uses_private_railway_network = (
+                redis_url.scheme == "redis"
+                and bool(redis_url.hostname)
+                and redis_url.hostname.endswith(".railway.internal")
+                and redis_authenticated
+            )
+            if not (redis_uses_tls or redis_uses_private_railway_network):
+                raise ValueError(
+                    "Production REDIS_URL must use authenticated TLS (rediss://) "
+                    "or authenticated Railway private networking"
+                )
+
+            database_url = urlsplit(self.database_url)
+            database_ssl_modes = parse_qs(database_url.query).get("sslmode", [])
+            database_authenticated = bool(database_url.username and database_url.password)
+            database_uses_verified_tls = "verify-full" in database_ssl_modes
+            database_uses_private_railway_network = (
+                bool(database_url.hostname)
+                and database_url.hostname.endswith(".railway.internal")
+                and "require" in database_ssl_modes
+            )
+            if not database_authenticated or not (
+                database_uses_verified_tls or database_uses_private_railway_network
+            ):
+                raise ValueError(
+                    "Production DATABASE_URL must use authenticated PostgreSQL TLS "
+                    "(sslmode=verify-full) or authenticated Railway private networking "
+                    "with sslmode=require"
+                )
             if not self.frontend_base_url.startswith("https://"):
                 raise ValueError("Production FRONTEND_BASE_URL must use HTTPS")
             if not all([self.smtp_host, self.smtp_username, self.smtp_password, self.smtp_from_email]):

@@ -7,10 +7,14 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
-COPY pyproject.toml ./
+# Railway builds this image from the repository root, so paths are repo-relative.
+COPY apps/api/pyproject.toml ./pyproject.toml
+COPY apps/api/alembic.ini ./alembic.ini
+COPY apps/api/migrations ./migrations
+
 RUN uv sync --no-dev
 
-COPY app ./app
+COPY apps/api/app ./app
 
 EXPOSE 8000
 
