@@ -1,6 +1,4 @@
-import smtplib
-import ssl
-from email.message import EmailMessage
+import httpx
 
 from app.core.config import get_settings
 
@@ -11,43 +9,27 @@ class EmailDeliveryError(RuntimeError):
 
 def send_transactional_email(*, recipient: str, subject: str, text_body: str) -> None:
     settings = get_settings()
-    if not all(
-        [
-            settings.smtp_host,
-            settings.smtp_username,
-            settings.smtp_password,
-            settings.smtp_from_email,
-        ]
-    ):
+    if not settings.resend_api_key or not settings.resend_from_email:
         raise EmailDeliveryError("Transactional email is not configured")
 
-    message = EmailMessage()
-    message["From"] = settings.smtp_from_email
-    message["To"] = recipient
-    message["Subject"] = subject
-    message.set_content(text_body)
+    normalized_recipient = recipient.strip().casefold()
+    if settings.resend_test_mode:
+        allowed_recipient = (settings.resend_test_recipient or "").strip().casefold()
+        if not allowed_recipient or normalized_recipient != allowed_recipient:
+            raise EmailDeliveryError("Recipient is not permitted in Resend test mode")
 
-    context = ssl.create_default_context()
     try:
-        if settings.smtp_use_ssl:
-            with smtplib.SMTP_SSL(
-                settings.smtp_host,
-                settings.smtp_port,
-                timeout=10,
-                context=context,
-            ) as smtp:
-                smtp.login(settings.smtp_username, settings.smtp_password)
-                refused = smtp.send_message(message)
-                if refused:
-                    raise EmailDeliveryError("SMTP server refused the recipient")
-        else:
-            with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=10) as smtp:
-                smtp.ehlo()
-                smtp.starttls(context=context)
-                smtp.ehlo()
-                smtp.login(settings.smtp_username, settings.smtp_password)
-                refused = smtp.send_message(message)
-                if refused:
-                    raise EmailDeliveryError("SMTP server refused the recipient")
-    except (OSError, smtplib.SMTPException) as exc:
+        response = httpx.post(
+            "https://api.resend.com/emails",
+            json={
+                "from": settings.resend_from_email,
+                "to": [normalized_recipient],
+                "subject": subject,
+                "text": text_body,
+            },
+            headers={"Authorization": f"Bearer {settings.resend_api_key}"},
+            timeout=15.0,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
         raise EmailDeliveryError("Transactional email delivery failed") from exc
