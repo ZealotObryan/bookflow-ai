@@ -67,29 +67,26 @@ def get_business_report(
     project_count, quoted_value, recorded_paid = project_rows
 
     daily_rows = db.execute(
-        select(
-            func.date(func.timezone(business.timezone, Booking.starts_at)),
-            func.count(Booking.id),
-            func.sum(case((Booking.status == "confirmed", 1), else_=0)),
-        )
-        .where(
+        select(Booking.starts_at, Booking.status).where(
             Booking.business_id == business.id,
             Booking.starts_at >= start_at,
             Booking.starts_at < end_at,
         )
-        .group_by(func.date(func.timezone(business.timezone, Booking.starts_at)))
-        .order_by(func.date(func.timezone(business.timezone, Booking.starts_at)))
     ).all()
+    daily_counts: dict[datetime.date, list[int]] = {}
+    business_zone = ZoneInfo(business.timezone)
+    for starts_at, booking_status in daily_rows:
+        local_day = starts_at.astimezone(business_zone).date()
+        counts_for_day = daily_counts.setdefault(local_day, [0, 0])
+        counts_for_day[0] += 1
+        if booking_status == "confirmed":
+            counts_for_day[1] += 1
 
-    daily_counts = {
-        day: (int(total), int(confirmed or 0))
-        for day, total, confirmed in daily_rows
-    }
     daily_activity = [
         DailyActivity(
             date=start_date + timedelta(days=offset),
-            bookings=daily_counts.get(start_date + timedelta(days=offset), (0, 0))[0],
-            confirmed_bookings=daily_counts.get(start_date + timedelta(days=offset), (0, 0))[1],
+            bookings=daily_counts.get(start_date + timedelta(days=offset), [0, 0])[0],
+            confirmed_bookings=daily_counts.get(start_date + timedelta(days=offset), [0, 0])[1],
         )
         for offset in range((today - start_date).days + 1)
     ]
