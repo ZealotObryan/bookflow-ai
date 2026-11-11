@@ -10,8 +10,8 @@ from app.core.rate_limit import auth_rate_limit
 from app.core.turnstile import verify_turnstile_token
 from app.db.session import get_db, set_tenant_context
 from app.models import Booking, Business, Customer, Service
-from app.modules.bookings.router import BookingInput, SegmentInput, create_booking_for_business
 from app.modules.bookings.availability import get_availability
+from app.modules.bookings.router import BookingInput, SegmentInput, create_booking_for_business
 
 router = APIRouter(prefix="/public/businesses", tags=["Public booking"])
 
