@@ -2,7 +2,7 @@ import uuid
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
@@ -52,6 +52,17 @@ def record_manual_payment(
         ))
         if target is None:
             raise HTTPException(status_code=404, detail="Booking not found")
+        if target.status in {"cancelled", "expired"}:
+            raise HTTPException(status_code=409, detail="Payments cannot be recorded against a cancelled or expired booking")
+        already_paid = db.scalar(
+            select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                Payment.business_id == business.id,
+                Payment.booking_id == target.id,
+                Payment.status == "succeeded",
+            )
+        ) or 0
+        if already_paid + payload.amount > target.total_amount:
+            raise HTTPException(status_code=422, detail="Payment would exceed the booking total")
         target_type = "booking"
         target_id = target.id
     else:
@@ -60,6 +71,18 @@ def record_manual_payment(
         ))
         if target is None:
             raise HTTPException(status_code=404, detail="Project not found")
+        if target.status == "cancelled":
+            raise HTTPException(status_code=409, detail="Payments cannot be recorded against a cancelled project")
+        already_paid = db.scalar(
+            select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                Payment.business_id == business.id,
+                Payment.project_id == target.id,
+                Payment.status == "succeeded",
+            )
+        ) or 0
+        if target.amount_paid + already_paid + payload.amount > target.quoted_amount:
+            raise HTTPException(status_code=422, detail="Payment would exceed the project quote")
+        target.amount_paid += payload.amount
         target_type = "project"
         target_id = target.id
 
