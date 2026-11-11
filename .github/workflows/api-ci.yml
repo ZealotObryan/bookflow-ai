@@ -7,7 +7,7 @@ on:
       - "apps/api/**"
       - ".github/workflows/api-ci.yml"
   push:
-    branches: [development]
+    branches: [development, deployment-readiness]
     paths:
       - "apps/api/**"
       - ".github/workflows/api-ci.yml"
