@@ -1,12 +1,12 @@
 """Merge business communication and WhatsApp migration heads.
 
-Revision ID: 0015_merge_communication_whatsapp
+Revision ID: 0015_merge_comm_whatsapp
 Revises: 0013_business_communication, 0014_whatsapp_entry_links
 """
 
 from collections.abc import Sequence
 
-revision: str = "0015_merge_communication_whatsapp"
+revision: str = "0015_merge_comm_whatsapp"
 down_revision: tuple[str, str] = (
     "0013_business_communication",
     "0014_whatsapp_entry_links",
