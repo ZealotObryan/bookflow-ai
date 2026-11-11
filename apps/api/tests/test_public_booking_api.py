@@ -12,7 +12,12 @@ from sqlalchemy.orm import Session
 from app.db.base import Base
 from app.models import AuditEvent, Booking, Business, BusinessWeeklyHours, Service
 from app.modules.public_booking import router as public_booking
-from app.modules.public_booking.router import PublicBookingSubmission, get_public_availability, get_public_business, submit_public_booking
+from app.modules.public_booking.router import (
+    PublicBookingSubmission,
+    get_public_availability,
+    get_public_business,
+    submit_public_booking,
+)
 
 
 @pytest.fixture()
