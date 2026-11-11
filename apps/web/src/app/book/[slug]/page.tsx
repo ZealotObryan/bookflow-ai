@@ -22,6 +22,21 @@ type PublicBusiness = {
   services: PublicService[];
 };
 type Slot = { starts_at: string; ends_at: string; employee_id: string | null };
+type BookingReceipt = { booking_reference: string; status: string; message: string; starts_at: string; hold_expires_at: string | null };
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: HTMLElement, options: {
+        sitekey: string;
+        callback: (token: string) => void;
+        "expired-callback"?: () => void;
+        "error-callback"?: () => void;
+      }) => string;
+      reset: (widgetId?: string) => void;
+      remove: (widgetId: string) => void;
+    };
+  }
+}
 
 function localDateValue() {
   const now = new Date();
@@ -42,6 +57,14 @@ export default function PublicBookingPage() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileWidgetId, setTurnstileWidgetId] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [receipt, setReceipt] = useState<BookingReceipt | null>(null);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -98,6 +121,84 @@ export default function PublicBookingPage() {
     return () => controller.abort();
   }, [business, selectedService, date, slug]);
 
+  useEffect(() => {
+    if (!business || !turnstileSiteKey) return;
+    let cancelled = false;
+    let widgetId = "";
+    const renderWidget = () => {
+      if (cancelled || !window.turnstile) return;
+      const container = document.getElementById("bookflow-turnstile");
+      if (!container) return;
+      container.replaceChildren();
+      widgetId = window.turnstile.render(container, {
+        sitekey: turnstileSiteKey,
+        callback: (token) => setTurnstileToken(token),
+        "expired-callback": () => setTurnstileToken(""),
+        "error-callback": () => setTurnstileToken(""),
+      });
+      setTurnstileWidgetId(widgetId);
+    };
+    if (window.turnstile) {
+      renderWidget();
+    } else {
+      let script = document.querySelector<HTMLScriptElement>("script[data-bookflow-turnstile]");
+      if (!script) {
+        script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        script.async = true;
+        script.defer = true;
+        script.dataset.bookflowTurnstile = "true";
+        document.head.appendChild(script);
+      }
+      script.addEventListener("load", renderWidget);
+    }
+    return () => {
+      cancelled = true;
+      if (widgetId && window.turnstile) window.turnstile.remove(widgetId);
+    };
+  }, [business, turnstileSiteKey]);
+
+  async function submitBooking(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!business || !service || !selectedSlot || !turnstileToken || !turnstileSiteKey) return;
+    const chosenSlot = slots.find((slot) => slot.starts_at === selectedSlot);
+    if (!chosenSlot) {
+      setError("That time is no longer available. Please choose another slot.");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/public/businesses/${encodeURIComponent(slug)}/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          customer_email: customerEmail || null,
+          service_id: service.id,
+          employee_id: chosenSlot.employee_id,
+          starts_at: chosenSlot.starts_at,
+          idempotency_key: crypto.randomUUID(),
+          turnstile_token: turnstileToken,
+        }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.detail || "Your booking request could not be submitted.");
+      setReceipt(body as BookingReceipt);
+      setSelectedSlot("");
+      setTurnstileToken("");
+      if (turnstileWidgetId && window.turnstile) window.turnstile.reset(turnstileWidgetId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Your booking request could not be submitted.");
+      setTurnstileToken("");
+      if (turnstileWidgetId && window.turnstile) window.turnstile.reset(turnstileWidgetId);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (loading) return <main className="marketing-shell" style={{ paddingTop: 100 }}><p>Loading booking page…</p></main>;
   if (error && !business) return <main className="marketing-shell" style={{ paddingTop: 100 }}><h1>Booking page unavailable</h1><p>{error}</p><Link className="text-link" href="/">Back to BookFlow</Link></main>;
 
@@ -144,11 +245,39 @@ export default function PublicBookingPage() {
             </div>
           ) : <p style={{ color: "#78837d" }}>{selectedService ? "No available times for this date. Try another day." : "Choose a service to see available times."}</p>}
         </div>
-        <div style={{ marginTop: 30, padding: 16, borderRadius: 10, background: "#f6f8f5", border: "1px solid #e8ece7" }}>
-          <strong style={{ display: "block", fontSize: 13 }}>Booking requests are being prepared</strong>
-          <p style={{ color: "#78837d", fontSize: 12, lineHeight: 1.6, margin: "6px 0 0" }}>You can preview services and availability here. Online booking submission will be enabled once customer verification and booking protection are connected.</p>
-        </div>
-        {service && selectedSlot && <p style={{ color: "#23684e", fontSize: 12, marginBottom: 0 }}>Selected: {service.name} · {new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: business?.timezone }).format(new Date(date + "T12:00:00"))} · {new Intl.DateTimeFormat("en-GB", { timeZone: business?.timezone, hour: "2-digit", minute: "2-digit" }).format(new Date(selectedSlot))}</p>}
+        {service && selectedSlot && !receipt && (
+          <form onSubmit={submitBooking} style={{ marginTop: 30, paddingTop: 24, borderTop: "1px solid #e8ece7", display: "grid", gap: 14 }}>
+            <div>
+              <span className="section-overline">04 — YOUR DETAILS</span>
+              <p style={{ color: "#78837d", fontSize: 12, margin: "6px 0 14px" }}>Selected: {service.name} · {new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: business?.timezone }).format(new Date(date + "T12:00:00"))} · {new Intl.DateTimeFormat("en-GB", { timeZone: business?.timezone, hour: "2-digit", minute: "2-digit" }).format(new Date(selectedSlot))}</p>
+            </div>
+            <label style={{ display: "grid", gap: 6, color: "#35453c", fontSize: 12, fontWeight: 700 }}>Full name
+              <input required minLength={2} maxLength={160} value={customerName} onChange={(event) => setCustomerName(event.target.value)} autoComplete="name" style={{ padding: 12, border: "1px solid #dfe6df", borderRadius: 8 }} />
+            </label>
+            <label style={{ display: "grid", gap: 6, color: "#35453c", fontSize: 12, fontWeight: 700 }}>Phone number (include country code)
+              <input required type="tel" minLength={8} maxLength={20} placeholder="+265991234567" value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} autoComplete="tel" style={{ padding: 12, border: "1px solid #dfe6df", borderRadius: 8 }} />
+            </label>
+            <label style={{ display: "grid", gap: 6, color: "#35453c", fontSize: 12, fontWeight: 700 }}>Email (optional)
+              <input type="email" maxLength={320} value={customerEmail} onChange={(event) => setCustomerEmail(event.target.value)} autoComplete="email" style={{ padding: 12, border: "1px solid #dfe6df", borderRadius: 8 }} />
+            </label>
+            <div>
+              <span className="section-overline">05 — SECURITY CHECK</span>
+              {turnstileSiteKey ? <div id="bookflow-turnstile" style={{ marginTop: 12 }} /> : <p style={{ color: "#9a5b22", fontSize: 12 }}>Online booking verification is not configured on this deployment yet.</p>}
+            </div>
+            <button type="submit" disabled={submitting || !turnstileToken || !turnstileSiteKey} style={{ padding: 14, borderRadius: 9, border: 0, background: submitting || !turnstileToken || !turnstileSiteKey ? "#a8b8ae" : "#23684e", color: "#fff", fontWeight: 800, cursor: submitting ? "wait" : "pointer" }}>
+              {submitting ? "Submitting request…" : "Request this appointment"}
+            </button>
+            <p style={{ color: "#78837d", fontSize: 11, lineHeight: 1.6, margin: 0 }}>This creates a temporary hold while the business reviews your request. Your appointment is not confirmed until the business confirms it.</p>
+          </form>
+        )}
+        {receipt && (
+          <div role="status" style={{ marginTop: 30, padding: 20, borderRadius: 12, background: "#eff7f0", border: "1px solid #d5e8d8" }}>
+            <strong style={{ display: "block", color: "#23684e" }}>Request received</strong>
+            <p style={{ color: "#35453c", fontSize: 13, margin: "8px 0" }}>{receipt.message}</p>
+            <p style={{ color: "#35453c", fontSize: 13 }}>Reference: <strong>{receipt.booking_reference}</strong></p>
+            <button type="button" onClick={() => { setReceipt(null); setCustomerName(""); setCustomerPhone(""); setCustomerEmail(""); }} style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #c9d9ce", background: "#fff", color: "#23684e", fontWeight: 700 }}>Make another booking</button>
+          </div>
+        )}
       </section>
       <p style={{ textAlign: "center", color: "#9aa39d", fontSize: 11, marginTop: 24 }}>Powered by BookFlow Ai</p>
     </main>
