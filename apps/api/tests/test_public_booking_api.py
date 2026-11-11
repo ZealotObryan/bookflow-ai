@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
-from app.models import AuditEvent, Booking, Business, BusinessWeeklyHours, Service
+from app.models import AuditEvent, Booking, Business, BusinessWeeklyHours, Customer, Service
 from app.modules.public_booking import router as public_booking
 from app.modules.public_booking.router import (
     PublicBookingSubmission,
@@ -149,3 +149,83 @@ def test_public_booking_creates_held_request_after_turnstile_verification(db_ses
     assert 'must confirm' in receipt.message
     assert booking is not None and booking.status == 'held'
     assert audit is not None and audit.actor_user_id is None
+
+
+
+def test_public_booking_retry_replays_existing_hold_without_duplicate_records(db_session, monkeypatch):
+    business = Business(
+        name="Retry Studio",
+        slug=f"retry-{uuid4().hex[:8]}",
+        workflow_mode="bookings",
+    )
+    db_session.add(business)
+    db_session.flush()
+    service = Service(
+        business_id=business.id,
+        name="Consultation",
+        duration_minutes=30,
+        price_amount=Decimal("5000.00"),
+        requires_employee=False,
+        status="active",
+    )
+    appointment_day = date.today() + timedelta(days=3)
+    db_session.add(service)
+    db_session.add(
+        BusinessWeeklyHours(
+            business_id=business.id,
+            weekday=appointment_day.weekday(),
+            opens_at=time(8),
+            closes_at=time(17),
+            is_closed=False,
+        )
+    )
+    db_session.commit()
+
+    verification_calls = []
+
+    async def verified(token, ip):
+        verification_calls.append((token, ip))
+
+    monkeypatch.setattr(public_booking, "verify_turnstile_token", verified)
+    starts_at = datetime.combine(
+        appointment_day, time(10), tzinfo=ZoneInfo(business.timezone)
+    )
+    payload = PublicBookingSubmission(
+        customer_name="Alex Customer",
+        customer_phone="+265991234567",
+        customer_email="alex@example.com",
+        service_id=service.id,
+        starts_at=starts_at.isoformat(),
+        idempotency_key=f"public-{uuid4().hex}",
+        turnstile_token="fresh-turnstile-token",
+    )
+    request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v1/public/businesses/test/bookings",
+            "headers": [],
+            "query_string": b"",
+            "client": ("203.0.113.10", 12345),
+        }
+    )
+
+    first_receipt = asyncio.run(
+        submit_public_booking(business.slug, payload, request, db_session)
+    )
+    retry_receipt = asyncio.run(
+        submit_public_booking(business.slug, payload, request, db_session)
+    )
+
+    bookings = db_session.scalars(
+        select(Booking).where(Booking.business_id == business.id)
+    ).all()
+    customers = db_session.scalars(
+        select(Customer).where(Customer.business_id == business.id)
+    ).all()
+
+    assert retry_receipt.booking_reference == first_receipt.booking_reference
+    assert retry_receipt.status == first_receipt.status == "held"
+    assert len(bookings) == 1
+    assert len(customers) == 1
+    assert len(verification_calls) == 2
