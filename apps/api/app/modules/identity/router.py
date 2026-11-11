@@ -173,9 +173,14 @@ def get_current_user(
     return user
 
 
-def _email_configured() -> bool:
+def _email_configured(recipient: str | None = None) -> bool:
     settings = get_settings()
-    return all([settings.smtp_host, settings.smtp_username, settings.smtp_password, settings.smtp_from_email])
+    if not settings.resend_api_key or not settings.resend_from_email:
+        return False
+    if settings.resend_test_mode:
+        allowed = (settings.resend_test_recipient or "").strip().casefold()
+        return bool(allowed and recipient and recipient.strip().casefold() == allowed)
+    return True
 
 
 def _create_email_token(db: Session, user: User, purpose: str) -> str:
@@ -375,9 +380,9 @@ def _verify_code(
     dependencies=[Depends(auth_rate_limit("register", ip_limit=5, ip_window=3600))],
 )
 def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> MessageResponse:
-    if not _email_configured():
-        raise HTTPException(status_code=503, detail="Account registration is temporarily unavailable")
     normalized = str(payload.email).strip().casefold()
+    if not _email_configured(normalized):
+        raise HTTPException(status_code=503, detail="Account registration is temporarily unavailable")
     user = db.scalar(select(User).where(User.email_normalized == normalized))
     if user is None:
         user = User(
@@ -410,9 +415,9 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> Message
     ],
 )
 def resend_email_verification(payload: EmailRequest, db: Session = Depends(get_db)) -> MessageResponse:
-    if not _email_configured():
-        raise HTTPException(status_code=503, detail="Email service is temporarily unavailable")
     normalized = str(payload.email).strip().casefold()
+    if not _email_configured(normalized):
+        raise HTTPException(status_code=503, detail="Email service is temporarily unavailable")
     user = db.scalar(select(User).where(User.email_normalized == normalized))
     if user is not None and user.email_verified_at is None and user.is_active:
         _request_auth_email(user, EMAIL_VERIFICATION_PURPOSE, db)
@@ -452,9 +457,9 @@ def verify_email(payload: EmailTokenRequest, db: Session = Depends(get_db)) -> M
     ],
 )
 def forgot_password(payload: EmailRequest, db: Session = Depends(get_db)) -> MessageResponse:
-    if not _email_configured():
-        raise HTTPException(status_code=503, detail="Password recovery is temporarily unavailable")
     normalized = str(payload.email).strip().casefold()
+    if not _email_configured(normalized):
+        raise HTTPException(status_code=503, detail="Password recovery is temporarily unavailable")
     user = db.scalar(select(User).where(User.email_normalized == normalized))
     if user is not None and user.email_verified_at is not None and user.is_active:
         _request_auth_email(user, PASSWORD_RESET_PURPOSE, db)
