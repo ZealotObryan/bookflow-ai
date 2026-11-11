@@ -61,6 +61,7 @@ export default function PublicBookingPage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [idempotencyKey, setIdempotencyKey] = useState("");
   const [turnstileWidgetId, setTurnstileWidgetId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState<BookingReceipt | null>(null);
@@ -180,13 +181,14 @@ export default function PublicBookingPage() {
           service_id: service.id,
           employee_id: chosenSlot.employee_id,
           starts_at: chosenSlot.starts_at,
-          idempotency_key: crypto.randomUUID(),
+          idempotency_key: idempotencyKey || crypto.randomUUID(),
           turnstile_token: turnstileToken,
         }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.detail || "Your booking request could not be submitted.");
       setReceipt(body as BookingReceipt);
+      setIdempotencyKey("");
       setSelectedSlot("");
       setTurnstileToken("");
       if (turnstileWidgetId && window.turnstile) window.turnstile.reset(turnstileWidgetId);
@@ -239,7 +241,7 @@ export default function PublicBookingPage() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 14 }}>
               {slots.map((slot) => {
                 const value = new Intl.DateTimeFormat("en-GB", { timeZone: business?.timezone, hour: "2-digit", minute: "2-digit" }).format(new Date(slot.starts_at));
-                return <button key={slot.starts_at} type="button" aria-pressed={selectedSlot === slot.starts_at} onClick={() => setSelectedSlot(slot.starts_at)}
+                return <button key={slot.starts_at} type="button" aria-pressed={selectedSlot === slot.starts_at} onClick={() => { if (selectedSlot !== slot.starts_at) setIdempotencyKey(""); setSelectedSlot(slot.starts_at); }}
                   style={{ border: selectedSlot === slot.starts_at ? "1.5px solid #23684e" : "1px solid #dfe6df", borderRadius: 8, padding: "10px 15px", background: selectedSlot === slot.starts_at ? "#eaf3ed" : "#fff", color: "#23684e", fontWeight: 700 }}>{value}</button>;
               })}
             </div>
