@@ -10,6 +10,7 @@ from sqlalchemy import (
     Index,
     Numeric,
     String,
+    UniqueConstraint,
     Text,
     Uuid,
     func,
@@ -30,6 +31,7 @@ class Project(Base):
         CheckConstraint("deposit_amount >= 0", name="project_deposit_nonnegative"),
         CheckConstraint("amount_paid >= 0", name="project_amount_paid_nonnegative"),
         CheckConstraint("deposit_amount <= quoted_amount", name="project_deposit_within_quote"),
+        UniqueConstraint("business_id", "id", name="uq_projects_business_id_id"),
         Index("ix_projects_business_status_due", "business_id", "status", "due_date"),
         Index("ix_projects_business_created", "business_id", "created_at"),
     )
