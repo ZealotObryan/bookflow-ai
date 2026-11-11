@@ -14,8 +14,8 @@ from app.modules.identity.router import router as identity_router
 from app.modules.onboarding.router import router as onboarding_router
 from app.modules.projects.router import router as projects_router
 from app.modules.public_booking.router import router as public_booking_router
-from app.modules.reports.router import router as reports_router
 from app.modules.records.router import router as records_router
+from app.modules.reports.router import router as reports_router
 from app.modules.whatsapp.entry_links import router as whatsapp_entry_router
 from app.modules.whatsapp.router import router as whatsapp_router
 
