@@ -146,11 +146,11 @@ async def submit_public_booking(slug: str, payload: PublicBookingSubmission, req
     if business is None:
         raise HTTPException(status_code=404, detail='Public booking page not found')
     set_tenant_context(db, business.id)
+    client_ip = request.client.host if request.client else None
+    await verify_turnstile_token(payload.turnstile_token, client_ip)
     existing = db.scalar(select(Booking).where(Booking.business_id == business.id, Booking.idempotency_key == payload.idempotency_key))
     if existing is not None:
         return PublicBookingReceipt(booking_reference=f'BF-{existing.id.hex[:10].upper()}', status=existing.status, message='We have already received this booking request.', starts_at=existing.starts_at.isoformat(), hold_expires_at=existing.hold_expires_at.isoformat() if existing.hold_expires_at else None)
-    client_ip = request.client.host if request.client else None
-    await verify_turnstile_token(payload.turnstile_token, client_ip)
     service = db.scalar(select(Service).where(Service.id == payload.service_id, Service.business_id == business.id, Service.status == 'active'))
     if service is None:
         raise HTTPException(status_code=422, detail='The selected service is unavailable.')
