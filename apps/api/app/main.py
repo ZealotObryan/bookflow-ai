@@ -12,6 +12,7 @@ from app.modules.businesses.communication_router import router as communication_
 from app.modules.businesses.router import router as businesses_router
 from app.modules.identity.router import router as identity_router
 from app.modules.onboarding.router import router as onboarding_router
+from app.modules.payments.router import router as payments_router
 from app.modules.projects.router import router as projects_router
 from app.modules.public_booking.router import router as public_booking_router
 from app.modules.records.router import router as records_router
@@ -64,6 +65,7 @@ app.include_router(communication_router, prefix="/api/v1")
 app.include_router(bookings_router, prefix="/api/v1")
 app.include_router(availability_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
+app.include_router(payments_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(records_router, prefix="/api/v1")
 app.include_router(onboarding_router, prefix="/api/v1")
