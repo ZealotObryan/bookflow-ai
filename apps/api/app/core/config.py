@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     meta_whatsapp_embedded_signup_config_id: str | None = None
     meta_whatsapp_solution_id: str | None = None
     meta_whatsapp_token_encryption_key: str | None = None
+    cloudflare_turnstile_site_key: str | None = None
+    cloudflare_turnstile_secret_key: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=(".env", "../../.env"),
