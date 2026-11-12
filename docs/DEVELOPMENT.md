@@ -1,48 +1,24 @@
-# BookFlow AI — Development Guide
+# Development
 
-## 1. Local prerequisites
+See the repository README for local setup. Apply database changes from `apps/api` with:
 
-Install:
+```bash
+uv run alembic upgrade head
+```
 
-- Git
-- Node.js LTS and pnpm
-- Python 3.12+ and uv
-- Docker Engine/Desktop with Compose
-- VS Code or another editor
-- Postman or Bruno for API testing
+The API CI workflow runs Ruff, pytest and the complete migration chain against PostgreSQL.
 
-Pin exact runtime and dependency versions in the project files when scaffolding begins. Do not assume the Vercel Node runtime setting is the local development version.
+## Tenant-owned catalogue records
 
-## 2. Repository conventions
+The initial scheduling catalogue migration adds services, employee profiles, schedulable resources, employee eligibility, and service resource requirements. All operational catalogue rows are business-scoped. API write/read endpoints must call the business membership authorization layer and must not trust a client-supplied business ID as proof of access.
 
-- Keep the monorepo layout documented in the root README.
-- Use feature branches for substantial work and reviewable pull requests.
-- Write focused commits with imperative messages.
-- Keep secrets in local environment files ignored by Git; commit only safe placeholders in `.env.example`.
-- Use migrations for all schema changes.
-- Add tests with each domain behavior.
-- Update documentation when architecture or API behavior changes.
+Do not enable production tenant data access until RLS is forced on these tables and the runtime database role is a non-owner, non-superuser role without BYPASSRLS. Migration credentials and application runtime credentials must be separate.
 
-## 3. Local services
 
-Docker Compose will provide local PostgreSQL and, when needed, Redis. Local development must work without production credentials. External integrations should use clearly labelled test/sandbox configurations; do not silently substitute mocks in production paths.
+## PostgreSQL tenant isolation
 
-## 4. Quality gates
+Migration `0008_tenant_rls` enables and forces row-level security on tenant-owned operational tables. Every query against these tables must run inside a transaction after the API has resolved an active business membership and called `set_tenant_context(db, business_id)`. The helper uses PostgreSQL `set_config(..., true)`, so the tenant ID is transaction-local and is cleared automatically when the transaction ends.
 
-Before a change is considered complete:
+The RLS policy denies reads and writes when no tenant context is set. The business membership and business root tables remain outside these policies because they are used to establish access. Business invitations are also excluded because invitation acceptance begins with a high-entropy, single-use token before the target business context is known; the endpoint additionally requires a verified matching email and locks/consumes the invitation transactionally.
 
-- Formatting and lint checks pass.
-- Static typing checks pass where configured.
-- Unit and integration tests pass.
-- Database migrations apply cleanly to a fresh database.
-- Tenant-isolation and authorization tests cover affected operations.
-- No secrets, personal customer data or provider credentials are committed.
-- Relevant docs and environment examples are current.
-
-## 5. Environment configuration
-
-Use environment variables validated at application startup. Maintain separate local, test, preview and production configuration. Never commit real API keys, OAuth secrets, database URLs or signing secrets.
-
-## 6. Milestone completion
-
-Each milestone records its objective, implementation, acceptance criteria, tests, documentation, known risks and remaining work. Production deployment requires a separate review and explicit approval.
+**Runtime role requirement:** use a dedicated non-superuser PostgreSQL login without `BYPASSRLS`. It must not own protected tables. Migration credentials must be separate and used only by Alembic. PostgreSQL superusers bypass RLS even when FORCE is enabled, so never use the migration/superuser account for API traffic. Configure least-privilege grants for the runtime role before deploying the API.

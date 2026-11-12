@@ -1,85 +1,35 @@
-# BookFlow AI — Initial Data Model
+# BookFlow AI data model
 
-**Status:** Conceptual model, not a migration or final schema.
+## Identity and tenancy
 
-## 1. Design rules
+Users may belong to multiple businesses through business memberships. Businesses own their operational records. Every tenant-owned operational table carries a `business_id`; APIs must resolve an active membership before querying or mutating those records.
 
-- PostgreSQL is the source of truth for BookFlow business data.
-- Use UUID primary keys for application entities.
-- Tenant-owned records carry `business_id`; enforce tenant-aware foreign keys and authorization.
-- Store timestamps in UTC (`timestamptz`) and retain an IANA timezone on each business (default `Africa/Blantyre`).
-- Store money as integer minor units with an ISO 4217 currency code; do not use floating-point types.
-- Use explicit status enums/check constraints and record lifecycle timestamps.
-- Add created/updated timestamps and audit sensitive state transitions.
-- Design idempotency for booking writes and external webhook processing.
+## Service and resource catalogue
 
-## 2. Core entities
+- **Services** belong to one business and define display name, optional description, duration in minutes, before/after buffers, price amount, and active/inactive status. Prices use a fixed two-decimal numeric representation; the business currency remains the currency of record.
+- **Employees** are business-scoped staff profiles. A profile can optionally link to a BookFlow user account, but an employee does not need a login to be schedulable. Employee profiles have a business-unique optional code and active/inactive status.
+- **Schedulable resources** represent rooms, chairs, beds, equipment, or other capacity-constrained assets. Capacity is explicit and must be positive.
+- **Service employee eligibility** records which employees may perform each service. It uses composite foreign keys containing `business_id`, preventing an employee from another business being assigned to a service.
+- **Service resource requirements** records which resource types/assets a service consumes and the required quantity. Composite foreign keys enforce same-business references.
 
-### Identity and tenancy
+The schema intentionally does not automatically assign employees. Booking requests will require an eligible employee where a service requires one. A future booking can contain multiple service segments, allowing sequential services with one employee or parallel/sequential segments handled by different employees.
 
-- `users`: login identity and profile.
-- `businesses`: tenant, display name, timezone, locale, currency and status.
-- `business_memberships`: user-to-business relationship, role and membership status.
-- `roles/permissions`: initially a small, explicit role model; expand only when real permission needs emerge.
+## Scheduling invariants to implement in the booking engine
 
-### Business setup
+1. A booking request is checked against business hours, employee schedules, breaks, service duration, buffers, and resource capacity.
+2. A booking may contain multiple service segments. Each segment references a service and, where required, an explicitly selected eligible employee.
+3. Resource requirements are evaluated for every segment and resource capacity is enforced for overlapping intervals.
+4. PostgreSQL transactions, row-level locking and exclusion/constraint strategies must prevent concurrent requests from double-booking employees or resources.
+5. Tenant context is transaction-local and database RLS must be forced for operational tenant tables before release.
 
-- `business_hours`: recurring operating windows by weekday.
-- `services`: name, description, duration, price, currency, active state and booking policy.
-- `employees`: staff profile and business membership/assignment.
-- `employee_services`: services an employee can perform.
-- `employee_availability`: recurring and date-specific working windows.
-- `blocked_times`: breaks, leave, maintenance and other unavailable periods.
 
-### Customers and bookings
+## Booking and availability foundation
 
-- `customers`: tenant-scoped customer profile and contact identifiers.
-- `booking_holds`: temporary resource reservations with expiry.
-- `bookings`: customer, status, start/end, timezone snapshot, source, notes and idempotency reference.
-- `booking_items`: services, assigned employee/resource, sequence, duration and price snapshot.
-- `booking_status_history`: actor, transition, timestamp and reason.
-
-### Payments and external systems
-
-- `payments`: internal amount, currency, status, purpose and provider reference.
-- `payment_events`: verified provider events and processing status.
-- `calendar_connections`: OAuth connection metadata and encrypted token references.
-- `calendar_event_mappings`: internal booking/resource to external event identifiers and sync state.
-- `whatsapp_accounts` and `conversations`: business channel configuration and minimal conversation metadata.
-- `webhook_inbox`: provider event identity, payload reference, verification and processing status.
-- `notification_jobs`: scheduled message intent, delivery state and idempotency key.
-- `audit_logs`: actor, tenant, action, target and safe metadata.
-
-Subscription and platform billing entities will be added before paid self-service launch.
-
-## 3. Important relationships
-
-- A user may have many business memberships; a business has many members.
-- A business owns services, employees, customers, schedules, bookings and payments.
-- A booking belongs to one business and customer and contains one or more booking items.
-- Each booking item references a service and, where applicable, an assigned employee/resource.
-- A payment belongs to a business and is associated with a booking or other explicit payment purpose.
-- External calendar events map to internal records; they do not replace them.
-
-## 4. Constraints and indexes to design
-
-- Unique normalized user login identifier.
-- Unique membership per (business, user).
-- Tenant-aware foreign keys for all tenant-owned relationships.
-- Index bookings by (business_id, start_at), status and customer.
-- Index employee schedule/resource allocations by tenant, resource and time range.
-- Unique provider event ID within provider/account scope.
-- Unique idempotency key within tenant and operation scope.
-- Check constraints for positive durations and non-negative money amounts.
-
-PostgreSQL range/exclusion constraints may be used to prevent overlapping active allocations for a single employee/resource. The final constraint must correctly model holds, confirmed bookings, buffers, multi-service bookings and cancellation. Do not ship a simplistic overlap constraint that rejects valid sequential services or misses concurrent writes.
-
-## 5. Decisions still required before migrations
-
-1. Whether employee assignment is mandatory for every service or whether shared resources (rooms, chairs, equipment) are first-class schedulable resources.
-2. Whether multi-service bookings are sequential under one employee, parallel across employees, or both.
-3. How business-level capacity and group bookings are represented.
-4. Exact deposit, expiry and cancellation policy semantics.
-5. RLS rollout and transaction-scoped tenant context strategy.
-
-These decisions will be resolved with concrete booking scenarios and tests before the first production schema migration.
+- Customers are scoped to a business and are not global contacts by default.
+- Business and employee weekly hours use the business's configured timezone for interpreting local wall-clock hours. Store actual booking and time-off instants as timezone-aware timestamps.
+- Employee time off is an explicit UTC interval.
+- A booking is the customer-facing appointment container. A booking may contain multiple ordered service segments, each with its own service, employee, start/end time and immutable service/price snapshots.
+- Composite foreign keys prevent a booking or segment from referencing a customer, service, employee or booking in another tenant.
+- A PostgreSQL GiST exclusion constraint prevents overlapping active segments assigned to the same employee, including concurrent booking attempts.
+- Resource capacity greater than one must be checked while holding a row lock on the resource in the booking transaction. A booking is not considered confirmed until all segment, employee and resource checks commit atomically.
+- Holds expire through a scheduled cleanup process. Expired holds must be transitioned to expired/cancelled segment states before their employee reservations are released.

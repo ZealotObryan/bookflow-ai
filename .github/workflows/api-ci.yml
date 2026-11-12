@@ -1,0 +1,64 @@
+name: API security checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/api-ci.yml"
+  push:
+    branches: [development, deployment-readiness]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/api-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: bookflow
+          POSTGRES_USER: bookflow
+          POSTGRES_PASSWORD: bookflow-ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bookflow -d bookflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://bookflow:bookflow-ci-password@localhost:5432/bookflow
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v5
+      - name: Install API dependencies
+        working-directory: apps/api
+        run: uv sync --group dev
+      - name: Lint
+        working-directory: apps/api
+        run: uv run ruff check .
+      - name: Apply migrations to PostgreSQL
+        working-directory: apps/api
+        run: uv run alembic upgrade head
+      - name: Unit and PostgreSQL integration tests
+        working-directory: apps/api
+        run: uv run pytest -q

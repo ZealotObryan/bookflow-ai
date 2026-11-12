@@ -1,0 +1,10 @@
+"use client";
+import Link from "next/link";
+import {useEffect,useState} from "react";
+import {ArrowRight,CalendarDays,CheckCircle2,LoaderCircle} from "lucide-react";
+import {apiConfigured,apiRequest} from "@/lib/api";
+export default function VerifyEmailPage(){
+ const [state,setState]=useState<"loading"|"success"|"error">("loading");const [message,setMessage]=useState("Checking your verification link…");
+ useEffect(()=>{let active=true;async function verify(){const token=new URLSearchParams(window.location.hash.slice(1)).get("token")||"";window.history.replaceState(null,"",window.location.pathname);if(!token){if(active){setState("error");setMessage("This verification link is missing its token.");}return;}try{if(!apiConfigured)throw new Error("Email verification will be available when the API is connected.");const result=await apiRequest<{message:string}>("/api/v1/auth/email/verify",{method:"POST",body:JSON.stringify({token})});if(active){setState("success");setMessage(result.message);}}catch(error){if(active){setState("error");setMessage(error instanceof Error?error.message:"This verification link is invalid or expired.");}}}void verify();return()=>{active=false;};},[]);
+ return <main className="auth-shell"><section className="auth-card"><Link className="brand-lockup" href="/"><span className="brand-symbol"><CalendarDays size={18}/></span><span>bookflow<span className="brand-period">.</span></span><span className="brand-ai">AI</span></Link><div className={"auth-success "+state}>{state==="loading"?<LoaderCircle size={28}/>:state==="success"?<CheckCircle2 size={28}/>:<CalendarDays size={28}/>}</div><span className="section-overline">EMAIL VERIFICATION</span><h1>{state==="success"?"You’re all set.":state==="error"?"Let’s try that again.":"Just a moment…"}</h1><p>{message}</p>{state!=="loading"&&<Link className="button button-primary auth-cta" href="/login">Continue to sign in <ArrowRight size={15}/></Link>}</section><span className="auth-footer">© {new Date().getFullYear()} BookFlow AI</span></main>;
+}

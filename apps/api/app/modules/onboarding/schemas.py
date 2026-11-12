@@ -3,7 +3,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-
 ONBOARDING_STEPS = {
     "business_profile",
     "services",

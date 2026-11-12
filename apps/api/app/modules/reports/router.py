@@ -4,7 +4,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import case, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
@@ -73,10 +73,10 @@ def get_business_report(
             Booking.starts_at < end_at,
         )
     ).all()
-    daily_counts: dict[datetime.date, list[int]] = {}
+    daily_counts = {}
     business_zone = ZoneInfo(business.timezone)
     for starts_at, booking_status in daily_rows:
-        local_day = starts_at.astimezone(business_zone).date()
+        local_day = starts_at.replace(tzinfo=UTC).astimezone(business_zone).date() if starts_at.tzinfo is None else starts_at.astimezone(business_zone).date()
         counts_for_day = daily_counts.setdefault(local_day, [0, 0])
         counts_for_day[0] += 1
         if booking_status == "confirmed":

@@ -1,17 +1,20 @@
 from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.core.config import get_settings
-from app.core.rate_limit import close_redis
+from app.core.rate_limit import close_redis, get_redis
+from app.db.session import get_engine
 from app.modules.bookings.availability import router as availability_router
 from app.modules.bookings.router import router as bookings_router
 from app.modules.businesses.communication_router import router as communication_router
 from app.modules.businesses.router import router as businesses_router
 from app.modules.identity.router import router as identity_router
 from app.modules.onboarding.router import router as onboarding_router
+from app.modules.payments.router import router as payments_router
 from app.modules.projects.router import router as projects_router
 from app.modules.public_booking.router import router as public_booking_router
 from app.modules.records.router import router as records_router
@@ -64,6 +67,7 @@ app.include_router(communication_router, prefix="/api/v1")
 app.include_router(bookings_router, prefix="/api/v1")
 app.include_router(availability_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
+app.include_router(payments_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(records_router, prefix="/api/v1")
 app.include_router(onboarding_router, prefix="/api/v1")
@@ -76,6 +80,21 @@ app.include_router(public_booking_router, prefix="/api/v1")
 async def health_check() -> dict[str, str]:
     """Return process health without depending on external services."""
     return {"status": "ok", "service": "bookflow-api"}
+
+
+@app.get("/ready", tags=["Operations"])
+async def readiness_check() -> dict[str, str]:
+    """Verify the database and Redis dependencies required for application traffic."""
+    try:
+        with get_engine().connect() as connection:
+            connection.execute(text("SELECT 1"))
+        await get_redis().ping()
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="Service dependencies are not ready",
+        ) from None
+    return {"status": "ready", "service": "bookflow-api"}
 
 
 @app.get("/api/v1", tags=["API"])
