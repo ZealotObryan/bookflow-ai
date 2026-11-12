@@ -1,20 +1,38 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, select, delete
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
 from app.models import (
-    AuditEvent, Booking, Customer, Employee, Payment, SchedulableResource,
-    Service, ServiceEmployeeEligibility, ServiceResourceRequirement, User,
+    AuditEvent,
+    Booking,
+    Customer,
+    Employee,
+    Payment,
+    SchedulableResource,
+    Service,
+    ServiceEmployeeEligibility,
+    ServiceResourceRequirement,
+    User,
 )
 from app.modules.businesses.authorization import require_membership, require_roles
 from app.modules.identity.router import get_current_user
 from app.modules.records.schemas import (
-    CustomerCreate, CustomerResponse, CustomerUpdate, EmployeeCreate,
-    EmployeeResponse, EmployeeUpdate, ResourceCreate, ResourceResponse,
-    ResourceUpdate, ServiceCreate, ServiceResponse, ServiceSchedulingUpdate, ServiceUpdate,
+    CustomerCreate,
+    CustomerResponse,
+    CustomerUpdate,
+    EmployeeCreate,
+    EmployeeResponse,
+    EmployeeUpdate,
+    ResourceCreate,
+    ResourceResponse,
+    ResourceUpdate,
+    ServiceCreate,
+    ServiceResponse,
+    ServiceSchedulingUpdate,
+    ServiceUpdate,
 )
 
 router = APIRouter(prefix="/businesses/{business_id}", tags=["Business records"])
