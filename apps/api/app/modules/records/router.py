@@ -1,11 +1,11 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db, set_tenant_context
-from app.models import AuditEvent, Customer, Employee, SchedulableResource, Service, User
+from app.models import AuditEvent, Booking, Customer, Employee, Payment, SchedulableResource, Service, User
 from app.modules.businesses.authorization import require_membership, require_roles
 from app.modules.identity.router import get_current_user
 from app.modules.records.schemas import (
@@ -37,10 +37,33 @@ def list_customers(business_id: uuid.UUID, user: User = Depends(get_current_user
                    db: Session = Depends(get_db)):
     require_membership(business_id, user, db)
     set_tenant_context(db, business_id)
-    return list(db.scalars(
-        select(Customer).where(Customer.business_id == business_id)
+    visit_counts = (
+        select(Booking.customer_id.label("customer_id"), func.count(Booking.id).label("visit_count"))
+        .where(Booking.business_id == business_id, Booking.status == "completed")
+        .group_by(Booking.customer_id).subquery()
+    )
+    paid_totals = (
+        select(Booking.customer_id.label("customer_id"),
+               func.coalesce(func.sum(Payment.amount), 0).label("lifetime_value"))
+        .join(Payment, (Payment.business_id == Booking.business_id) & (Payment.booking_id == Booking.id))
+        .where(Booking.business_id == business_id, Payment.status == "succeeded")
+        .group_by(Booking.customer_id).subquery()
+    )
+    rows = db.execute(
+        select(Customer,
+               func.coalesce(visit_counts.c.visit_count, 0).label("visits"),
+               func.coalesce(paid_totals.c.lifetime_value, 0).label("lifetime_value"))
+        .outerjoin(visit_counts, visit_counts.c.customer_id == Customer.id)
+        .outerjoin(paid_totals, paid_totals.c.customer_id == Customer.id)
+        .where(Customer.business_id == business_id)
         .order_by(Customer.display_name.asc())
-    ).all())
+    ).all()
+    return [
+        {"id": c.id, "business_id": c.business_id, "display_name": c.display_name,
+         "email": c.email, "phone_e164": c.phone_e164, "notes": c.notes,
+         "created_at": c.created_at, "visits": visits, "lifetime_value": value}
+        for c, visits, value in rows
+    ]
 
 
 @router.post("/customers", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
