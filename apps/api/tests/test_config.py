@@ -15,10 +15,9 @@ def test_production_settings_require_secure_infrastructure() -> None:
         otp_pepper="p" * 64,
         otp_encryption_key=Fernet.generate_key().decode(),
         frontend_base_url="https://bookflow.example.com",
-        smtp_host="smtp.example.com",
-        smtp_username="bookflow",
-        smtp_password="smtp-secret",
-        smtp_from_email="no-reply@example.com",
+        resend_api_key="re_test_config_fixture",
+        resend_from_email="no-reply@example.com",
+        resend_test_mode=False,
     )
     assert settings.environment == "production"
 
@@ -72,9 +71,8 @@ def test_production_accepts_authenticated_railway_private_network_services() -> 
         otp_pepper="p" * 64,
         otp_encryption_key=Fernet.generate_key().decode(),
         frontend_base_url="https://bookflow.example.com",
-        smtp_host="smtp.example.com",
-        smtp_username="bookflow",
-        smtp_password="smtp-secret",
-        smtp_from_email="no-reply@example.com",
+        resend_api_key="re_test_config_fixture",
+        resend_from_email="no-reply@example.com",
+        resend_test_mode=False,
     )
     assert settings.environment == "production"
