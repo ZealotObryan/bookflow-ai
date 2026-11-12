@@ -14,7 +14,7 @@ from app.modules.identity.router import get_current_user
 from app.modules.records.schemas import (
     CustomerCreate, CustomerResponse, CustomerUpdate, EmployeeCreate,
     EmployeeResponse, EmployeeUpdate, ResourceCreate, ResourceResponse,
-    ResourceUpdate, ServiceCreate, ServiceResponse, ServiceUpdate,
+    ResourceUpdate, ServiceCreate, ServiceResponse, ServiceSchedulingUpdate, ServiceUpdate,
 )
 
 router = APIRouter(prefix="/businesses/{business_id}", tags=["Business records"])
@@ -139,23 +139,15 @@ def get_service_scheduling(business_id: uuid.UUID, service_id: uuid.UUID,
 
 
 @router.put("/services/{service_id}/scheduling")
-def replace_service_scheduling(business_id: uuid.UUID, service_id: uuid.UUID, payload: dict,
+def replace_service_scheduling(business_id: uuid.UUID, service_id: uuid.UUID, payload: ServiceSchedulingUpdate,
                                user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     business, _ = require_roles(business_id, {"owner", "admin", "manager"}, user, db)
     set_tenant_context(db, business.id)
     service = db.scalar(select(Service).where(Service.id == service_id,
         Service.business_id == business.id).with_for_update())
     if service is None: raise HTTPException(status_code=404, detail="Service not found")
-    employee_ids = payload.get("employee_ids", [])
-    requirements = payload.get("resource_requirements", [])
-    if not isinstance(employee_ids, list) or not isinstance(requirements, list):
-        raise HTTPException(status_code=422, detail="employee_ids and resource_requirements must be lists")
-    try:
-        employee_ids = list(dict.fromkeys(uuid.UUID(str(value)) for value in employee_ids))
-        parsed = [(uuid.UUID(str(item["resource_id"])), int(item.get("quantity", 1)))
-                  for item in requirements]
-    except (ValueError, TypeError, KeyError, AttributeError):
-        raise HTTPException(status_code=422, detail="Invalid employee or resource assignment") from None
+    employee_ids = list(dict.fromkeys(payload.employee_ids))
+    parsed = [(item.resource_id, item.quantity) for item in payload.resource_requirements]
     if any(quantity < 1 or quantity > 1000 for _, quantity in parsed):
         raise HTTPException(status_code=422, detail="Resource quantity must be between 1 and 1000")
     if len({resource_id for resource_id, _ in parsed}) != len(parsed):
