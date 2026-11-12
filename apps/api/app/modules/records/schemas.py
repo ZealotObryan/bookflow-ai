@@ -205,3 +205,18 @@ class ResourceResponse(BaseModel):
     resource_code: str | None
     status: str
     created_at: datetime
+
+
+class ServiceResourceRequirementInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    resource_id: uuid.UUID
+    quantity: int = Field(default=1, strict=True, ge=1, le=1000)
+
+
+class ServiceSchedulingUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    employee_ids: list[uuid.UUID] = Field(default_factory=list, max_length=200)
+    resource_requirements: list[ServiceResourceRequirementInput] = Field(default_factory=list, max_length=200)
+
