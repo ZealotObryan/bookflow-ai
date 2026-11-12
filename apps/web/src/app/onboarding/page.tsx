@@ -41,7 +41,7 @@ export default function OnboardingPage(){
  return <main className="auth-shell onboarding-shell">
   <Link className="auth-back" href="/"><ArrowLeft size={15}/> BookFlow home</Link>
   <section className="auth-card onboarding-card">
-   <Link className="brand-lockup" href="/"><span className="brand-symbol"><CalendarDays size={18}/></span><span>bookflow<span className="brand-period">.</span></span><span className="brand-ai">AI</span></Link>
+   <Link className="brand-lockup" href="/"><span className="brand-symbol"><CalendarDays size={18}/></span><span>BookFlow<span className="brand-period">.</span></span><span className="brand-ai">AI</span></Link>
    <span className="section-overline">YOUR BUSINESS, YOUR WORKFLOW</span>
    <h1>Let’s make BookFlow<br/><em>work your way.</em></h1>
    <p>{user?.email_verified?"Tell us a little about your business. We’ll use this to shape your workspace.":"Please verify your email before creating a business workspace."}</p>
