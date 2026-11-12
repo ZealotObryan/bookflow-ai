@@ -64,9 +64,11 @@ def create_customer(business_id: uuid.UUID, payload: CustomerCreate,
     business, _ = require_roles(business_id, {"owner", "admin", "manager", "staff"}, user, db)
     set_tenant_context(db, business.id)
     customer = Customer(business_id=business.id, **payload.model_dump())
-    db.add(customer); db.flush()
+    db.add(customer)
+    db.flush()
     _audit(db, business.id, user.id, "customer.created", "customer", customer.id)
-    db.commit(); db.refresh(customer)
+    db.commit()
+    db.refresh(customer)
     return customer
 
 
@@ -77,17 +79,21 @@ def update_customer(business_id: uuid.UUID, customer_id: uuid.UUID, payload: Cus
     set_tenant_context(db, business.id)
     customer = db.scalar(select(Customer).where(Customer.id == customer_id,
         Customer.business_id == business.id).with_for_update())
-    if customer is None: raise HTTPException(status_code=404, detail="Customer not found")
-    for key, value in payload.model_dump(exclude_unset=True).items(): setattr(customer, key, value)
+    if customer is None:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(customer, key, value)
     _audit(db, business.id, user.id, "customer.updated", "customer", customer.id)
-    db.commit(); db.refresh(customer)
+    db.commit()
+    db.refresh(customer)
     return customer
 
 
 @router.get("/services", response_model=list[ServiceResponse])
 def list_services(business_id: uuid.UUID, user: User = Depends(get_current_user),
                   db: Session = Depends(get_db)):
-    require_membership(business_id, user, db); set_tenant_context(db, business_id)
+    require_membership(business_id, user, db)
+    set_tenant_context(db, business_id)
     return list(db.scalars(select(Service).where(Service.business_id == business_id)
         .order_by(Service.name.asc())).all())
 
@@ -98,9 +104,11 @@ def create_service(business_id: uuid.UUID, payload: ServiceCreate,
     business, _ = require_roles(business_id, {"owner", "admin", "manager"}, user, db)
     set_tenant_context(db, business.id)
     service = Service(business_id=business.id, **payload.model_dump())
-    db.add(service); db.flush()
+    db.add(service)
+    db.flush()
     _audit(db, business.id, user.id, "service.created", "service", service.id)
-    db.commit(); db.refresh(service)
+    db.commit()
+    db.refresh(service)
     return service
 
 
@@ -111,19 +119,24 @@ def update_service(business_id: uuid.UUID, service_id: uuid.UUID, payload: Servi
     set_tenant_context(db, business.id)
     service = db.scalar(select(Service).where(Service.id == service_id,
         Service.business_id == business.id).with_for_update())
-    if service is None: raise HTTPException(status_code=404, detail="Service not found")
-    for key, value in payload.model_dump(exclude_unset=True).items(): setattr(service, key, value)
+    if service is None:
+        raise HTTPException(status_code=404, detail="Service not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(service, key, value)
     _audit(db, business.id, user.id, "service.updated", "service", service.id)
-    db.commit(); db.refresh(service)
+    db.commit()
+    db.refresh(service)
     return service
 
 
 @router.get("/services/{service_id}/scheduling")
 def get_service_scheduling(business_id: uuid.UUID, service_id: uuid.UUID,
                            user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    require_membership(business_id, user, db); set_tenant_context(db, business_id)
+    require_membership(business_id, user, db)
+    set_tenant_context(db, business_id)
     service = db.scalar(select(Service).where(Service.id == service_id, Service.business_id == business_id))
-    if service is None: raise HTTPException(status_code=404, detail="Service not found")
+    if service is None:
+        raise HTTPException(status_code=404, detail="Service not found")
     employee_ids = db.scalars(select(ServiceEmployeeEligibility.employee_id).where(
         ServiceEmployeeEligibility.business_id == business_id,
         ServiceEmployeeEligibility.service_id == service_id)).all()
@@ -145,7 +158,8 @@ def replace_service_scheduling(business_id: uuid.UUID, service_id: uuid.UUID, pa
     set_tenant_context(db, business.id)
     service = db.scalar(select(Service).where(Service.id == service_id,
         Service.business_id == business.id).with_for_update())
-    if service is None: raise HTTPException(status_code=404, detail="Service not found")
+    if service is None:
+        raise HTTPException(status_code=404, detail="Service not found")
     employee_ids = list(dict.fromkeys(payload.employee_ids))
     parsed = [(item.resource_id, item.quantity) for item in payload.resource_requirements]
     if any(quantity < 1 or quantity > 1000 for _, quantity in parsed):
@@ -189,7 +203,8 @@ def replace_service_scheduling(business_id: uuid.UUID, service_id: uuid.UUID, pa
 @router.get("/scheduling-options")
 def list_scheduling_options(business_id: uuid.UUID, user: User = Depends(get_current_user),
                             db: Session = Depends(get_db)):
-    require_membership(business_id, user, db); set_tenant_context(db, business_id)
+    require_membership(business_id, user, db)
+    set_tenant_context(db, business_id)
     employees = db.scalars(select(Employee).where(Employee.business_id == business_id,
         Employee.status == "active").order_by(Employee.display_name.asc())).all()
     resources = db.scalars(select(SchedulableResource).where(
@@ -203,7 +218,8 @@ def list_scheduling_options(business_id: uuid.UUID, user: User = Depends(get_cur
 @router.get("/team", response_model=list[EmployeeResponse])
 def list_team(business_id: uuid.UUID, user: User = Depends(get_current_user),
               db: Session = Depends(get_db)):
-    require_membership(business_id, user, db); set_tenant_context(db, business_id)
+    require_membership(business_id, user, db)
+    set_tenant_context(db, business_id)
     return list(db.scalars(select(Employee).where(Employee.business_id == business_id)
         .order_by(Employee.display_name.asc())).all())
 
@@ -214,9 +230,11 @@ def create_team_member(business_id: uuid.UUID, payload: EmployeeCreate,
     business, _ = require_roles(business_id, {"owner", "admin", "manager"}, user, db)
     set_tenant_context(db, business.id)
     employee = Employee(business_id=business.id, **payload.model_dump())
-    db.add(employee); db.flush()
+    db.add(employee)
+    db.flush()
     _audit(db, business.id, user.id, "employee.created", "employee", employee.id)
-    db.commit(); db.refresh(employee)
+    db.commit()
+    db.refresh(employee)
     return employee
 
 
@@ -227,17 +245,21 @@ def update_team_member(business_id: uuid.UUID, employee_id: uuid.UUID, payload: 
     set_tenant_context(db, business.id)
     employee = db.scalar(select(Employee).where(Employee.id == employee_id,
         Employee.business_id == business.id).with_for_update())
-    if employee is None: raise HTTPException(status_code=404, detail="Team member not found")
-    for key, value in payload.model_dump(exclude_unset=True).items(): setattr(employee, key, value)
+    if employee is None:
+        raise HTTPException(status_code=404, detail="Team member not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(employee, key, value)
     _audit(db, business.id, user.id, "employee.updated", "employee", employee.id)
-    db.commit(); db.refresh(employee)
+    db.commit()
+    db.refresh(employee)
     return employee
 
 
 @router.get("/resources", response_model=list[ResourceResponse])
 def list_resources(business_id: uuid.UUID, user: User = Depends(get_current_user),
                    db: Session = Depends(get_db)):
-    require_membership(business_id, user, db); set_tenant_context(db, business_id)
+    require_membership(business_id, user, db)
+    set_tenant_context(db, business_id)
     return list(db.scalars(select(SchedulableResource).where(
         SchedulableResource.business_id == business_id).order_by(SchedulableResource.name.asc())).all())
 
@@ -248,9 +270,11 @@ def create_resource(business_id: uuid.UUID, payload: ResourceCreate,
     business, _ = require_roles(business_id, {"owner", "admin", "manager"}, user, db)
     set_tenant_context(db, business.id)
     resource = SchedulableResource(business_id=business.id, **payload.model_dump())
-    db.add(resource); db.flush()
+    db.add(resource)
+    db.flush()
     _audit(db, business.id, user.id, "resource.created", "resource", resource.id)
-    db.commit(); db.refresh(resource)
+    db.commit()
+    db.refresh(resource)
     return resource
 
 
@@ -262,8 +286,11 @@ def update_resource(business_id: uuid.UUID, resource_id: uuid.UUID, payload: Res
     resource = db.scalar(select(SchedulableResource).where(
         SchedulableResource.id == resource_id, SchedulableResource.business_id == business.id
     ).with_for_update())
-    if resource is None: raise HTTPException(status_code=404, detail="Resource not found")
-    for key, value in payload.model_dump(exclude_unset=True).items(): setattr(resource, key, value)
+    if resource is None:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(resource, key, value)
     _audit(db, business.id, user.id, "resource.updated", "resource", resource.id)
-    db.commit(); db.refresh(resource)
+    db.commit()
+    db.refresh(resource)
     return resource
