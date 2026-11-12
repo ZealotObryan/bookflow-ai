@@ -47,6 +47,8 @@ class CustomerResponse(BaseModel):
     phone_e164: str | None
     notes: str | None
     created_at: datetime
+    visits: int = 0
+    lifetime_value: Decimal = Decimal("0.00")
 
 
 class ServiceCreate(BaseModel):
