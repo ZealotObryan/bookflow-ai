@@ -12,6 +12,12 @@ from app.modules.records.schemas import (
     CustomerCreate,
     CustomerResponse,
     CustomerUpdate,
+    EmployeeCreate,
+    EmployeeResponse,
+    EmployeeUpdate,
+    ResourceCreate,
+    ResourceResponse,
+    ResourceUpdate,
     ServiceCreate,
     ServiceResponse,
     ServiceUpdate,
@@ -174,3 +180,89 @@ def list_scheduling_options(
             for resource in resources
         ],
     }
+
+
+@router.get("/team", response_model=list[EmployeeResponse])
+def list_team(business_id: uuid.UUID, user: User = Depends(get_current_user),
+              db: Session = Depends(get_db)):
+    require_membership(business_id, user, db)
+    set_tenant_context(db, business_id)
+    return list(db.scalars(
+        select(Employee).where(Employee.business_id == business_id)
+        .order_by(Employee.display_name.asc())
+    ).all())
+
+
+@router.post("/team", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
+def create_team_member(business_id: uuid.UUID, payload: EmployeeCreate,
+                       user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    business, _ = require_roles(business_id, {"owner", "admin", "manager"}, user, db)
+    set_tenant_context(db, business.id)
+    employee = Employee(business_id=business.id, **payload.model_dump())
+    db.add(employee)
+    db.flush()
+    _audit(db, business.id, user.id, "employee.created", "employee", employee.id)
+    db.commit()
+    db.refresh(employee)
+    return employee
+
+
+@router.patch("/team/{employee_id}", response_model=EmployeeResponse)
+def update_team_member(business_id: uuid.UUID, employee_id: uuid.UUID, payload: EmployeeUpdate,
+                       user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    business, _ = require_roles(business_id, {"owner", "admin", "manager"}, user, db)
+    set_tenant_context(db, business.id)
+    employee = db.scalar(select(Employee).where(
+        Employee.id == employee_id, Employee.business_id == business.id
+    ).with_for_update())
+    if employee is None:
+        raise HTTPException(status_code=404, detail="Team member not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(employee, key, value)
+    _audit(db, business.id, user.id, "employee.updated", "employee", employee.id)
+    db.commit()
+    db.refresh(employee)
+    return employee
+
+
+@router.get("/resources", response_model=list[ResourceResponse])
+def list_resources(business_id: uuid.UUID, user: User = Depends(get_current_user),
+                   db: Session = Depends(get_db)):
+    require_membership(business_id, user, db)
+    set_tenant_context(db, business_id)
+    return list(db.scalars(
+        select(SchedulableResource).where(SchedulableResource.business_id == business_id)
+        .order_by(SchedulableResource.name.asc())
+    ).all())
+
+
+@router.post("/resources", response_model=ResourceResponse, status_code=status.HTTP_201_CREATED)
+def create_resource(business_id: uuid.UUID, payload: ResourceCreate,
+                    user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    business, _ = require_roles(business_id, {"owner", "admin", "manager"}, user, db)
+    set_tenant_context(db, business.id)
+    resource = SchedulableResource(business_id=business.id, **payload.model_dump())
+    db.add(resource)
+    db.flush()
+    _audit(db, business.id, user.id, "resource.created", "resource", resource.id)
+    db.commit()
+    db.refresh(resource)
+    return resource
+
+
+@router.patch("/resources/{resource_id}", response_model=ResourceResponse)
+def update_resource(business_id: uuid.UUID, resource_id: uuid.UUID, payload: ResourceUpdate,
+                    user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    business, _ = require_roles(business_id, {"owner", "admin", "manager"}, user, db)
+    set_tenant_context(db, business.id)
+    resource = db.scalar(select(SchedulableResource).where(
+        SchedulableResource.id == resource_id, SchedulableResource.business_id == business.id
+    ).with_for_update())
+    if resource is None:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(resource, key, value)
+    _audit(db, business.id, user.id, "resource.updated", "resource", resource.id)
+    db.commit()
+    db.refresh(resource)
+    return resource
