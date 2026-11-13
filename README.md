@@ -87,8 +87,6 @@ uv run pytest
 uv run ruff check .
 ```
 
-The first migration creates users, businesses and business memberships. It does not yet create booking or payment tables.
-
 ## Engineering principles
 
 1. PostgreSQL is authoritative for bookings, customers and payment records.
@@ -107,6 +105,14 @@ The first migration creates users, businesses and business memberships. It does 
 - [Development workflow](docs/DEVELOPMENT.md)
 - [Scheduling model decision](docs/decisions/ADR-001-scheduling-model.md)
 
-## Status
+## Current implementation status
 
-Identity, tenant-aware business onboarding, booking foundations, project/work tracking foundations and the first WhatsApp Cloud API client are implemented on the development branch. The dashboard still contains preview data in some areas; WhatsApp account connection, inbound webhook processing, live messaging workflows and payment-provider integration remain in progress. No production deployment is active.
+**Production web app:** [https://bookflow-ai-sigma.vercel.app/](https://bookflow-ai-sigma.vercel.app/)
+
+The Next.js web application is deployed to Vercel production. The latest production deployment includes the returning-user routing and dashboard-loading fixes; its CI checks (lint, TypeScript and production build) passed.
+
+Implemented foundations include identity and tenant-aware business onboarding, business profile management, service catalogue, employee and resource management, service scheduling configuration, booking/scheduling foundations, and project/work tracking foundations.
+
+The following are **not yet production-ready integrations** and must not be presented as connected: Meta WhatsApp Business account onboarding and inbound webhook workflows, live WhatsApp booking conversations, Google Calendar sync, and PayChangu payment processing. WhatsApp click-to-chat and manual payment recording are not substitutes for those provider integrations.
+
+Some dashboard areas and end-to-end workflows still require a production-data and functional audit. A successful frontend deployment does not by itself certify the API, database configuration, external integrations or complete booking lifecycle for production use.
