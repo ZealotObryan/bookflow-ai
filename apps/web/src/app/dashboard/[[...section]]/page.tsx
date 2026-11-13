@@ -13,7 +13,7 @@ import {
   Sparkles, Users, Wallet, X, Zap, Scissors, BriefcaseBusiness, TrendingUp, LogOut, ClipboardList
 } from "lucide-react";
 
-type WorkspaceProfile={id:string;name:string;slug:string;business_type:string;workflow_mode:"bookings"|"tracking"|"both";whatsapp_priority:string};
+type WorkspaceProfile={id:string;name:string;slug:string;timezone:string;currency:string;business_type:string;workflow_mode:"bookings"|"tracking"|"both";whatsapp_priority:string};
 type WhatsAppSettings={id:string;business_id:string;assistant_enabled:boolean;assistant_greeting:string|null;assistant_booking_policy:"owner_approval"|"automatic";notification_phone:string|null;business_whatsapp_number:string|null;whatsapp_connection_status:string;created_at:string;updated_at:string};
 type BookingStatus="Confirmed"|"Pending"|"Cancelled"|"Completed"|"No show"|"Expired";
 type Booking={id:string;customer:string;service:string;employee:string;date:string;time:string;amount:number;status:BookingStatus;color:string};
