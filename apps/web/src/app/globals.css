@@ -94,3 +94,160 @@
  .hero-copy-block,.hero-visual,.floating-note,.floating-stamp{animation:none!important}
  .hero-visual:hover .preview-window{transform:none}
 }
+
+
+
+/* Product typography system — readable defaults for the real app UI.
+   The small typography inside the marketing dashboard preview is intentionally
+   left untouched; these rules target live workspace, forms and account screens. */
+:root {
+  font-size: 100%;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Workspace navigation and global controls */
+.dashboard-shell { font-size: 1rem; line-height: 1.5; }
+.dashboard-shell .side-link { min-height: 44px; height: auto; padding-block: 9px; font-size: .9375rem; line-height: 1.35; }
+.dashboard-shell .nav-label { font-size: .75rem; line-height: 1.4; }
+.dashboard-shell .business-switch b,
+.dashboard-shell .profile-row b { font-size: .875rem; line-height: 1.35; }
+.dashboard-shell .business-switch small,
+.dashboard-shell .profile-row small { font-size: .8125rem; line-height: 1.4; }
+.dashboard-shell .breadcrumbs { font-size: .875rem; }
+.dashboard-shell .search-box input { font-size: .875rem; }
+.dashboard-shell .button { font-size: .9375rem; min-height: 44px; }
+.dashboard-shell .button-small { font-size: .875rem; min-height: 40px; }
+
+/* Page titles, explanatory copy and dashboard cards */
+.dashboard-shell .page-heading h1 { line-height: 1.2; }
+.dashboard-shell .page-heading>div>p,
+.dashboard-shell .panel-head p,
+.dashboard-shell .panel>p,
+.dashboard-shell .insight-panel>p,
+.dashboard-shell .settings-stack .panel>p,
+.dashboard-shell .service-banner p,
+.dashboard-shell .team-intro p,
+.dashboard-shell .automation-intro p,
+.dashboard-shell .report-toolbar p { font-size: .9375rem; line-height: 1.55; }
+.dashboard-shell .stat-card>div { font-size: .875rem; line-height: 1.4; }
+.dashboard-shell .stat-card>small,
+.dashboard-shell .chart-note,
+.dashboard-shell .revenue-number small,
+.dashboard-shell .insight-point small,
+.dashboard-shell .schedule-item>div:nth-child(3) small,
+.dashboard-shell .quick-action small,
+.dashboard-shell .resource-line,
+.dashboard-shell .channel-row small,
+.dashboard-shell .team-card p,
+.dashboard-shell .team-card>small,
+.dashboard-shell .empty-state span { font-size: .8125rem; line-height: 1.5; }
+.dashboard-shell .panel h2 { font-size: 1rem; line-height: 1.35; }
+.dashboard-shell .insight-panel h2 { font-size: 1.5rem; line-height: 1.25; }
+.dashboard-shell .link-button,
+.dashboard-shell .panel-link,
+.dashboard-shell .preview-banner button { font-size: .875rem; line-height: 1.4; }
+.dashboard-shell .preview-banner b,
+.dashboard-shell .preview-banner span { font-size: .8125rem; line-height: 1.4; }
+.dashboard-shell .schedule-item>span,
+.dashboard-shell .schedule-item>div:nth-child(3) b,
+.dashboard-shell .quick-action b,
+.dashboard-shell .insight-point b { font-size: .875rem; line-height: 1.4; }
+.dashboard-shell .schedule-meta>b { font-size: .8125rem; }
+.dashboard-shell .status { font-size: .75rem; line-height: 1.3; padding: 6px 9px; }
+
+/* Tables and dense data: never rely on tiny 6–9px text for business records */
+.dashboard-shell .table-scroll th { font-size: .75rem; line-height: 1.4; }
+.dashboard-shell .table-scroll td,
+.dashboard-shell .table-scroll td>b { font-size: .875rem; line-height: 1.45; }
+.dashboard-shell .booking-id { font-size: .8125rem; }
+.dashboard-shell .filter-tabs button { font-size: .875rem; }
+.dashboard-shell .empty-state b { font-size: 1rem; }
+.dashboard-shell .customer-stats small { font-size: .8125rem; }
+.dashboard-shell .customer-stats b { font-size: 1.25rem; }
+
+/* Calendar labels and event details */
+.dashboard-shell .calendar-head,
+.dashboard-shell .calendar-help { font-size: .8125rem; line-height: 1.4; }
+.dashboard-shell .calendar-event b { font-size: .8125rem; line-height: 1.3; }
+.dashboard-shell .calendar-event small { font-size: .75rem; line-height: 1.3; }
+
+/* Team, resources, services, integrations and settings */
+.dashboard-shell .team-card>span,
+.dashboard-shell .team-card .link-button,
+.dashboard-shell .service-card h3 { font-size: .9375rem; line-height: 1.4; }
+.dashboard-shell .integration-note p,
+.dashboard-shell .automation-row small,
+.dashboard-shell .hours-row>span,
+.dashboard-shell .channel-row,
+.dashboard-shell .settings-layout>nav a { font-size: .875rem; line-height: 1.5; }
+.dashboard-shell .settings-form .field,
+.dashboard-shell .field { font-size: .875rem; line-height: 1.4; }
+.dashboard-shell .field input,
+.dashboard-shell .field select,
+.dashboard-shell .field textarea,
+.dashboard-shell input,
+.dashboard-shell select,
+.dashboard-shell textarea { font-size: 1rem; line-height: 1.45; }
+.dashboard-shell .compact-select { min-height: 40px; height: auto; font-size: .875rem; }
+.dashboard-shell .form-error { font-size: .875rem; line-height: 1.5; }
+.dashboard-shell .modal-head p { font-size: .9375rem; line-height: 1.5; }
+.dashboard-shell .toast { font-size: .875rem; line-height: 1.45; }
+
+/* Authentication and onboarding are live product surfaces too */
+.auth-card>p,
+.auth-form,
+.auth-note,
+.auth-form-links a,
+.auth-switch a,
+.form-error,
+.business-list b,
+.business-list small,
+.onboarding-progress,
+.onboarding-step>p,
+.onboarding-subtitle,
+.onboarding-choice b,
+.onboarding-choice small,
+.onboarding-option b,
+.onboarding-option small,
+.onboarding-summary b,
+.onboarding-summary span { line-height: 1.5; }
+.auth-card>p,
+.auth-form,
+.auth-note,
+.auth-form-links a,
+.auth-switch a,
+.form-error,
+.business-list b,
+.onboarding-progress,
+.onboarding-step>p,
+.onboarding-choice b,
+.onboarding-option b { font-size: .9375rem; }
+.business-list small,
+.onboarding-subtitle,
+.onboarding-choice small,
+.onboarding-option small,
+.onboarding-summary b,
+.onboarding-summary span { font-size: .8125rem; }
+.auth-form input,
+.auth-form select,
+.auth-form textarea { font-size: 1rem; }
+
+/* Keep enlarged text from being clipped by fixed-height controls */
+.dashboard-shell button,
+.dashboard-shell .side-link,
+.dashboard-shell .button,
+.dashboard-shell .status,
+.dashboard-shell .filter-tabs button { min-height: 40px; }
+.dashboard-shell .table-scroll { overflow-x: auto; }
+@media (max-width: 720px) {
+  .dashboard-shell .dashboard-content { padding-left: 16px; padding-right: 16px; }
+  .dashboard-shell .page-heading { align-items: flex-start; flex-wrap: wrap; }
+  .dashboard-shell .page-heading h1 { font-size: clamp(1.5rem, 6vw, 2rem); }
+  .dashboard-shell .panel { padding: 16px; }
+  .dashboard-shell .table-panel { padding: 0; }
+}
