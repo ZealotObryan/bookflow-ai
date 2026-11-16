@@ -10,6 +10,7 @@ from app.models.booking import (
     EmployeeWeeklyHours,
 )
 from app.models.business import Business, BusinessMembership
+from app.models.calendar_feed import BusinessCalendarFeed
 from app.models.catalog import (
     Employee,
     SchedulableResource,
@@ -34,6 +35,7 @@ __all__ = [
     "BookingSegment",
     "BookingSegmentResource",
     "Business",
+    "BusinessCalendarFeed",
     "BusinessInvitation",
     "BusinessMembership",
     "BusinessOnboardingProgress",

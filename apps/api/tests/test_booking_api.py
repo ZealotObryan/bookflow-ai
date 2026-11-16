@@ -188,7 +188,9 @@ def test_availability_returns_only_valid_employee_slots(db_session, booking_cont
 
 def test_availability_excludes_existing_employee_hold(db_session, booking_context):
     business, user, customer, employee, service = booking_context
-    booked_start = datetime(2026, 11, 16, 6, 30, tzinfo=UTC)
+    booked_start = (datetime.now(UTC) + timedelta(days=7)).replace(
+        hour=6, minute=30, second=0, microsecond=0
+    )
     create_booking(
         business_id=business.id,
         payload=request_for(customer, service, employee, booked_start, "availability-hold-01"),
@@ -199,7 +201,7 @@ def test_availability_excludes_existing_employee_hold(db_session, booking_contex
     result = get_availability(
         business_id=business.id,
         service_id=service.id,
-        target_date=date(2026, 11, 16),
+        target_date=booked_start.date(),
         employee_id=employee.id,
         slot_interval_minutes=30,
         user=user,
