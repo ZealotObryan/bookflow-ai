@@ -21,6 +21,7 @@ from app.modules.records.router import router as records_router
 from app.modules.reports.router import router as reports_router
 from app.modules.whatsapp.entry_links import router as whatsapp_entry_router
 from app.modules.whatsapp.router import router as whatsapp_router
+from app.modules.whatsapp.webhooks import router as whatsapp_webhook_router
 
 
 @asynccontextmanager
@@ -73,6 +74,7 @@ app.include_router(records_router, prefix="/api/v1")
 app.include_router(onboarding_router, prefix="/api/v1")
 app.include_router(whatsapp_router, prefix="/api/v1")
 app.include_router(whatsapp_entry_router, prefix="/api/v1")
+app.include_router(whatsapp_webhook_router, prefix="/api/v1")
 app.include_router(public_booking_router, prefix="/api/v1")
 
 
