@@ -1,0 +1,37 @@
+name: Refresh and audit web dependencies
+
+on:
+  push:
+    branches: [security/dependency-patch]
+    paths:
+      - "apps/web/package.json"
+      - ".github/workflows/dependency-security.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-lockfile-and-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: security/dependency-patch
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Refresh workspace lockfile
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Apply compatible security fixes
+        run: npm audit fix --package-lock-only --ignore-scripts
+      - name: Record audit report
+        run: npm audit --json > dependency-audit.json || true
+      - name: Commit refreshed lockfile and audit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json dependency-audit.json
+          git diff --cached --quiet || git commit -m "chore: refresh audited web dependency lockfile"
+          git push
