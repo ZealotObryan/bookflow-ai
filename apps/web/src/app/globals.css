@@ -619,3 +619,21 @@ button,a,[role="button"],summary{-webkit-tap-highlight-color:transparent}
  .table-panel>.panel-head{padding:14px}
  .filter-tabs{padding:0 14px}
 }
+
+/* Homepage connected-workspace strip: restrained staggered reveal and interactive lift */
+.value-strip{position:relative;isolation:isolate;overflow:hidden}
+.value-strip:before{content:"";position:absolute;z-index:-1;inset:0 auto 0 0;width:34%;background:linear-gradient(100deg,transparent,rgba(221,237,224,.48),transparent);transform:translateX(-130%);animation:value-strip-sheen 1.35s .35s ease-out both;pointer-events:none}
+.value-strip-label{animation:value-strip-label-in .65s .08s both}
+.value-strip-item{position:relative;min-height:34px;padding:0 13px;border-radius:8px;transition:background .25s ease,color .25s ease,transform .25s ease;animation:value-strip-item-in .65s cubic-bezier(.2,.75,.25,1) both}
+.value-strip-item:nth-of-type(2){animation-delay:.16s}
+.value-strip-item:nth-of-type(3){animation-delay:.27s}
+.value-strip-item:nth-of-type(4){animation-delay:.38s}
+.value-strip-item:nth-of-type(5){animation-delay:.49s}
+.value-strip-item svg{transform-origin:center;transition:transform .3s ease,color .3s ease}
+.value-strip-item:hover{background:#edf5ef;color:#286849;transform:translateY(-3px)}
+.value-strip-item:hover svg{transform:rotate(-8deg) scale(1.13);color:#347c55}
+@keyframes value-strip-label-in{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes value-strip-item-in{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}
+@keyframes value-strip-sheen{0%{transform:translateX(-130%);opacity:0}18%{opacity:1}100%{transform:translateX(360%);opacity:0}}
+@media(max-width:760px){.value-strip{gap:10px;flex-wrap:wrap;padding:18px 0}.value-strip-label{flex:0 0 100%;margin-bottom:3px}.value-strip-item{padding:0 9px;min-height:32px}}
+@media(prefers-reduced-motion:reduce){.value-strip:before{display:none}.value-strip-label,.value-strip-item{animation:none}.value-strip-item,.value-strip-item svg{transition:none}}
