@@ -620,15 +620,13 @@ button,a,[role="button"],summary{-webkit-tap-highlight-color:transparent}
  .filter-tabs{padding:0 14px}
 }
 
-/* Homepage connected-workspace strip: seamless, continuous horizontal marquee */
+/* Homepage connected-workspace strip: seamless, uninterrupted horizontal loop */
 .value-strip{display:flex;align-items:center;gap:28px;min-width:0;overflow:hidden}
 .value-strip-label{flex:0 0 auto;white-space:nowrap}
-.value-strip-marquee{flex:1 1 auto;min-width:0;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
-.value-strip-track{display:flex;width:max-content;animation:value-strip-marquee 24s linear infinite;will-change:transform}
-.value-strip-group{display:flex;flex:0 0 auto;align-items:center;gap:30px;padding-right:30px}
-.value-strip-item{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;white-space:nowrap;min-height:38px;padding:0 10px;border-radius:8px;font-size:10px;font-weight:700;color:#63736a}
+.value-strip-marquee{flex:1 1 auto;min-width:0;overflow:hidden}
+.value-strip-track{display:flex;width:max-content;animation:value-strip-marquee 30s linear infinite;will-change:transform}
+.value-strip-group{display:flex;flex:0 0 auto;align-items:center;gap:24px;padding-right:24px}
+.value-strip-item{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;white-space:nowrap;min-height:38px;padding:0 8px;border-radius:8px;font-size:10px;font-weight:700;color:#63736a}
 .value-strip-item svg{flex:0 0 auto;color:#54856a}
 @keyframes value-strip-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.value-strip-marquee:hover .value-strip-track{animation-play-state:paused}
 @media(max-width:760px){.value-strip{gap:16px;flex-wrap:nowrap;padding:18px 0}.value-strip-label{font-size:7px;letter-spacing:1px}.value-strip-group{gap:16px;padding-right:16px}.value-strip-item{padding:0 6px;font-size:9px}}
-@media(prefers-reduced-motion:reduce){.value-strip-track{animation:none;transform:none}.value-strip-marquee{overflow-x:auto;mask-image:none;-webkit-mask-image:none}}
