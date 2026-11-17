@@ -422,3 +422,78 @@ button,a,[role="button"],summary{-webkit-tap-highlight-color:transparent}
 @media (prefers-reduced-motion: reduce) {
   .dashboard-shell .sidebar { transition: none; }
 }
+
+
+/* Dashboard overview — clearer information hierarchy for daily operations. */
+.dashboard-shell .stats-grid { gap: 14px; margin-bottom: 18px; }
+.dashboard-shell .stat-card {
+  position: relative;
+  overflow: hidden;
+  padding: 19px 18px;
+  border-radius: 16px;
+}
+.dashboard-shell .stat-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: linear-gradient(90deg, #8db59a, #dcebe0);
+  opacity: .75;
+}
+.dashboard-shell .stat-card>div { gap: 10px; font-size: .875rem; }
+.dashboard-shell .stat-card>div span { min-width: 0; }
+.dashboard-shell .stat-card>div i { width: 36px; height: 36px; border-radius: 11px; }
+.dashboard-shell .stat-card>strong {
+  margin: 16px 0 9px;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  letter-spacing: -.045em;
+}
+.dashboard-shell .stat-card>small { font-size: .8125rem; line-height: 1.45; }
+.dashboard-shell .content-grid { gap: 18px; margin-bottom: 18px; align-items: stretch; }
+.dashboard-shell .content-grid>.panel { min-width: 0; padding: 22px; border-radius: 16px; }
+.dashboard-shell .panel-head { align-items: center; }
+.dashboard-shell .panel-head h2 { font-size: 1.0625rem; }
+.dashboard-shell .panel-head p { font-size: .875rem; line-height: 1.5; }
+.dashboard-shell .revenue-number { margin-top: 26px; font-size: clamp(1.7rem, 3vw, 2.1rem); }
+.dashboard-shell .revenue-number small { font-size: .8125rem; line-height: 1.5; }
+.dashboard-shell .bar-chart { height: 174px; gap: clamp(9px, 1.8vw, 18px); }
+.dashboard-shell .bar-chart small { font-size: .75rem; }
+.dashboard-shell .chart-note { font-size: .75rem; line-height: 1.5; }
+.dashboard-shell .insight-panel { background: linear-gradient(145deg, #f2f7f2, #eaf2eb); }
+.dashboard-shell .insight-tag { font-size: .75rem; letter-spacing: .09em; }
+.dashboard-shell .insight-panel h2 { margin: 25px 0 12px; font-size: clamp(1.55rem, 2.4vw, 1.9rem); }
+.dashboard-shell .insight-panel>p { font-size: .9375rem; line-height: 1.65; }
+.dashboard-shell .insight-point { gap: 12px; margin: 14px 0; }
+.dashboard-shell .insight-point b { font-size: .875rem; }
+.dashboard-shell .insight-point small { font-size: .8125rem; line-height: 1.45; }
+.dashboard-shell .schedule-list { margin-top: 18px; }
+.dashboard-shell .schedule-item { gap: 13px; padding: 14px 0; }
+.dashboard-shell .schedule-item>span { width: 48px; font-size: .8125rem; }
+.dashboard-shell .schedule-item>i { height: 38px; }
+.dashboard-shell .schedule-item>div:nth-child(3) b { font-size: .875rem; }
+.dashboard-shell .schedule-item>div:nth-child(3) small { font-size: .8125rem; }
+.dashboard-shell .schedule-meta>b { font-size: .8125rem; }
+.dashboard-shell .quick-action { gap: 13px; padding: 15px 0; }
+.dashboard-shell .quick-action>span { width: 38px; height: 38px; border-radius: 11px; }
+.dashboard-shell .quick-action b { font-size: .875rem; }
+.dashboard-shell .quick-action small { font-size: .8125rem; line-height: 1.4; }
+.dashboard-shell .table-link { margin-top: 10px; }
+@media (max-width: 980px) {
+  .dashboard-shell .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-shell .content-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .dashboard-shell .stats-grid { gap: 10px; }
+  .dashboard-shell .stat-card { padding: 14px; }
+  .dashboard-shell .stat-card>strong { margin: 12px 0 8px; font-size: clamp(1.15rem, 5vw, 1.5rem); }
+  .dashboard-shell .content-grid>.panel { padding: 17px; }
+  .dashboard-shell .bar-chart { height: 145px; }
+  .dashboard-shell .insight-panel h2 { margin-top: 18px; }
+  .dashboard-shell .schedule-item { gap: 9px; }
+  .dashboard-shell .schedule-item>span { width: 42px; }
+}
+@media (max-width: 390px) {
+  .dashboard-shell .stat-card>div { align-items: flex-start; }
+  .dashboard-shell .stat-card>div i { width: 30px; height: 30px; flex: 0 0 30px; }
+  .dashboard-shell .schedule-meta { max-width: 105px; }
+}
