@@ -271,3 +271,82 @@ body {
 .support-contact-copy .button{margin-top:17px}
 .support-email-pending{margin-top:12px!important;color:#8b6b35!important;font-size:13px!important}
 @media(max-width:640px){.help-intro,.help-faq-panel,.support-contact-card{padding:20px}.support-contact-card{gap:13px}.help-faq summary{font-size:14px;padding:17px 0}.help-faq p{font-size:13px}}
+
+
+/* BookFlow UI system refinement — calmer hierarchy, consistent surfaces and purposeful motion */
+:root{
+ --radius-card:16px;
+ --radius-control:10px;
+ --shadow-card:0 8px 28px rgba(24,39,32,.045);
+ --shadow-card-hover:0 16px 38px rgba(24,39,32,.085);
+ --focus-ring:0 0 0 4px rgba(35,104,78,.13);
+}
+html{scroll-padding-top:88px}
+::selection{background:#dcebe0;color:#174c39}
+button,a,[role="button"],summary{-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid #438767;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+.button{min-height:44px;border-radius:10px;font-size:13px;letter-spacing:-.08px;transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s ease,background-color .18s ease,border-color .18s ease}
+.button:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(24,39,32,.10)}
+.button:active{transform:translateY(0) scale(.985)}
+.button:focus-visible,.icon-button:focus-visible{outline:0;box-shadow:var(--focus-ring)}
+.button-small{min-height:38px;font-size:12px}
+.section-overline{font-size:10px;letter-spacing:1.45px}
+.panel,.stat-card,.service-card,.team-card,.customer-card,.project-card,.integration-card{
+ border-radius:var(--radius-card);
+ box-shadow:var(--shadow-card);
+ transition:box-shadow .2s ease,border-color .2s ease,transform .2s ease;
+}
+.panel{border-color:var(--line)}
+.stat-card:hover,.service-card:hover,.team-card:hover,.customer-card:hover,.project-card:hover,.integration-card:hover{
+ box-shadow:var(--shadow-card-hover);border-color:#d8e4da
+}
+.dashboard-shell .dashboard-topbar{
+ background:rgba(255,255,255,.92);
+ backdrop-filter:saturate(160%) blur(14px);
+ -webkit-backdrop-filter:saturate(160%) blur(14px);
+}
+.dashboard-shell .sidebar{border-right-color:#e5ebe5}
+.dashboard-shell .side-link{border-radius:10px;transition:background .16s ease,color .16s ease,transform .16s ease}
+.dashboard-shell .side-link:hover{transform:translateX(2px)}
+.dashboard-shell .side-link.active{font-weight:700}
+.dashboard-shell .search-box{border-radius:11px;transition:border-color .18s ease,box-shadow .18s ease}
+.dashboard-shell .search-box:focus-within{border-color:#9dbda7;box-shadow:var(--focus-ring)}
+.dashboard-shell .panel-head{gap:16px}
+.dashboard-shell .panel-head h2{letter-spacing:-.35px}
+.dashboard-shell .table-scroll th{font-size:11px;letter-spacing:.55px;text-transform:uppercase;color:#718078}
+.dashboard-shell .table-scroll tbody tr{transition:background .14s ease}
+.dashboard-shell .table-scroll tbody tr:hover{background:#f8faf8}
+.dashboard-shell .empty-state{border-radius:14px}
+.dashboard-shell input,.dashboard-shell select,.dashboard-shell textarea,
+.auth-form input,.auth-form select,.auth-form textarea{
+ border-radius:var(--radius-control);
+ transition:border-color .16s ease,box-shadow .16s ease,background .16s ease
+}
+.dashboard-shell input:focus,.dashboard-shell select:focus,.dashboard-shell textarea:focus,
+.auth-form input:focus,.auth-form select:focus,.auth-form textarea:focus{
+ outline:0;border-color:#8fb49b;box-shadow:var(--focus-ring)
+}
+.dashboard-shell .modal-backdrop{backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.dashboard-shell .modal{border-radius:20px;box-shadow:0 28px 90px rgba(17,34,24,.22)}
+.dashboard-shell .toast{border-radius:12px;box-shadow:0 12px 32px rgba(17,34,24,.16)}
+/* Marketing pages: stronger editorial hierarchy and more deliberate navigation */
+.marketing-nav{position:relative;z-index:5}
+.marketing-links a,.nav-login{transition:color .16s ease}
+.marketing-links a:hover,.nav-login:hover{color:var(--green)}
+.marketing-shell .marketing-hero h1{letter-spacing:-.055em}
+.marketing-shell .marketing-lede{max-width:590px;line-height:1.7}
+.marketing-shell section[id]{scroll-margin-top:96px}
+@media(max-width:760px){
+ .marketing-shell{padding-left:5%;padding-right:5%}
+ .marketing-nav{height:70px}
+ .marketing-links{gap:16px}
+ .marketing-links a,.nav-login{font-size:13px}
+ .marketing-actions{gap:14px}
+ .marketing-shell .marketing-hero h1{letter-spacing:-.045em}
+}
+@media(hover:none){
+ .button:hover,.dashboard-shell .side-link:hover{transform:none;box-shadow:none}
+}
