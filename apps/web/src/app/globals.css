@@ -784,3 +784,64 @@ button,a,[role="button"],summary{-webkit-tap-highlight-color:transparent}
   .dashboard-shell .customer-stats>div { padding-inline: 7px; }
   .dashboard-shell .calendar-grid { grid-template-columns: 44px repeat(7, 92px); min-width: 688px; }
 }
+
+
+/* Mobile-first customer cards and a compact day-agenda calendar. */
+.customer-mobile-list { display: none; }
+.calendar-toolbar {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:4px 0 14px;
+}
+.calendar-view-toggle {
+  display:inline-flex;gap:3px;padding:4px;border:1px solid #e8eee8;
+  border-radius:10px;background:#f6f9f6;
+}
+.calendar-view-toggle button {
+  min-height:36px;padding:0 13px;border:0;border-radius:7px;
+  background:transparent;color:#728077;font-size:11px;font-weight:700;
+}
+.calendar-view-toggle button.active { background:#fff;color:#286849;box-shadow:0 1px 4px rgba(20,50,30,.09); }
+.calendar-date-picker { display:flex;align-items:center;gap:8px;color:#7d8a80;font-size:10px;font-weight:700; }
+.calendar-date-picker input { min-height:38px;max-width:150px;padding:0 8px;border:1px solid #e5ebe5;border-radius:8px;background:#fff;color:#34463a;font:inherit; }
+.calendar-day-head { border:1px solid #eff2ef;background:#fbfcfa;cursor:pointer; }
+.calendar-day-head.selected { background:#edf5ef;color:#286849;box-shadow:inset 0 -2px #347653; }
+.calendar-agenda { padding:2px 0 4px; }
+.calendar-agenda-heading { display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 2px 14px;border-bottom:1px solid #edf1ed;color:#35463a;font-size:13px; }
+.calendar-agenda-heading span { color:#89958c;font-size:11px; }
+.calendar-agenda-item { display:grid;grid-template-columns:52px 4px minmax(0,1fr) auto;align-items:center;gap:12px;padding:15px 4px;border-bottom:1px solid #edf1ed; }
+.calendar-agenda-item time { color:#738177;font-size:12px;font-variant-numeric:tabular-nums; }
+.calendar-agenda-item>i { align-self:stretch;min-height:48px;border-radius:8px;background:#86ae91; }
+.calendar-agenda-item>i.peach { background:#d9a07c; }
+.calendar-agenda-item>i.blue { background:#91a5c7; }
+.calendar-agenda-item>i.lilac { background:#a89ac6; }
+.calendar-agenda-item>i.mint { background:#81b7a5; }
+.calendar-agenda-item>div:nth-child(3) { min-width:0; }
+.calendar-agenda-item>div:nth-child(3) b,.calendar-agenda-item>div:nth-child(3) small { display:block;overflow-wrap:anywhere; }
+.calendar-agenda-item>div:nth-child(3) b { color:#34463a;font-size:13px; }
+.calendar-agenda-item>div:nth-child(3) small { margin-top:4px;color:#87938a;font-size:11px; }
+.calendar-agenda-actions { display:flex;flex-direction:column;align-items:flex-end;gap:7px; }
+.calendar-agenda-actions button { min-height:32px;padding:0 10px;border:1px solid #dfe9e1;border-radius:7px;background:#f4f8f4;color:#286849;font-size:10px;font-weight:700; }
+.customer-mobile-card { padding:15px 16px;border-top:1px solid #edf1ed;background:#fff; }
+.customer-mobile-main { display:flex;align-items:center;gap:11px;min-width:0; }
+.customer-initials { display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:13px;background:#edf5ef;color:#347653;font-size:12px;font-weight:800; }
+.customer-mobile-main>div { display:flex;flex-direction:column;min-width:0;gap:4px; }
+.customer-mobile-main>div b { color:#34463a;font-size:13px;overflow-wrap:anywhere; }
+.customer-mobile-main>div small { color:#9aa49c;font-size:10px; }
+.customer-mobile-main>strong { margin-left:auto;color:#34463a;font-size:13px;white-space:nowrap; }
+.customer-mobile-details { display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 0 51px;color:#7e8b81;font-size:11px; }
+.customer-mobile-details a,.customer-mobile-email { color:#397653;text-decoration:none;overflow-wrap:anywhere; }
+.customer-mobile-email { display:block;margin:7px 0 0 51px;font-size:11px; }
+@media(max-width:560px) {
+  .customer-mobile-list { display:block; }
+  .customer-desktop-table { display:none; }
+  .calendar-toolbar { align-items:stretch;flex-direction:column; }
+  .calendar-view-toggle { width:100%; }
+  .calendar-view-toggle button { flex:1; }
+  .calendar-date-picker { justify-content:space-between;min-height:40px; }
+  .calendar-date-picker input { max-width:none;flex:1; }
+  .calendar-agenda-item { grid-template-columns:45px 4px minmax(0,1fr) auto;gap:9px;padding:14px 1px; }
+  .calendar-agenda-item>div:nth-child(3) b { font-size:12px; }
+  .calendar-agenda-item>div:nth-child(3) small { font-size:10px; }
+  .calendar-agenda-actions .status { font-size:9px; }
+  .calendar-agenda-actions button { min-height:34px; }
+}
