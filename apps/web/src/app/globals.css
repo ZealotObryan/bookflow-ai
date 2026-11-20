@@ -630,3 +630,264 @@ button,a,[role="button"],summary{-webkit-tap-highlight-color:transparent}
 .value-strip-item svg{flex:0 0 auto;color:#54856a}
 @keyframes value-strip-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(max-width:760px){.value-strip{gap:16px;flex-wrap:nowrap;padding:18px 0}.value-strip-label{font-size:7px;letter-spacing:1px}.value-strip-group{gap:16px;padding-right:16px}.value-strip-item{padding:0 6px;font-size:9px}}
+
+
+/* Mobile experience refinement — layouts designed for narrow touch screens. */
+@media (max-width: 560px) {
+  .marketing-shell { padding-inline: 16px; }
+  .marketing-nav {
+    height: 62px;
+    gap: 10px;
+    justify-content: space-between;
+  }
+  .marketing-nav .brand-lockup {
+    flex: 0 0 auto;
+    gap: 7px;
+    font-size: 19px;
+    letter-spacing: -.8px;
+  }
+  .marketing-nav .brand-symbol { width: 32px; height: 32px; }
+  .marketing-nav .brand-ai {
+    align-self: center;
+    margin: 0 0 0 -4px;
+    font-size: 8px;
+    line-height: 1;
+  }
+  .marketing-links { display: none; }
+  .marketing-actions { flex: 0 0 auto; gap: 0; }
+  .marketing-actions .nav-login { display: none; }
+  .marketing-actions .button {
+    min-height: 38px;
+    padding: 0 11px;
+    gap: 5px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .marketing-hero { min-height: 0; padding: 42px 0 32px; gap: 20px; }
+  .marketing-hero h1 {
+    margin: 21px 0 17px;
+    font-size: clamp(43px, 12vw, 52px);
+    line-height: 1.02;
+    letter-spacing: -.052em;
+  }
+  .marketing-lede { font-size: 14px; line-height: 1.7; }
+  .hero-cta-row { margin-top: 23px; gap: 14px; }
+  .hero-cta-row .button { width: 100%; justify-content: center; min-height: 52px; }
+  .hero-trust { margin-top: 22px; gap: 11px; }
+  .hero-visual { min-height: 0; margin: 0 -3px; padding-bottom: 18px; }
+  .preview-window { width: 100%; }
+  .floating-note { max-width: 78%; }
+  .value-strip { margin-top: 8px; }
+  .feature-section { padding: 48px 0; }
+  .feature-grid { gap: 12px; }
+  .feature-card { min-height: 0; padding: 20px; }
+  .how-section { padding: 48px 0; }
+  .closing-cta { margin-bottom: 32px; padding: 28px 22px; }
+  .marketing-footer { padding: 20px 0; }
+
+  .dashboard-shell .dashboard-topbar {
+    height: 58px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .dashboard-shell .top-left { min-width: 0; gap: 8px; }
+  .dashboard-shell .breadcrumbs {
+    min-width: 0;
+    gap: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .dashboard-shell .breadcrumbs b {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dashboard-shell .top-right { flex: 0 0 auto; gap: 10px; }
+  .dashboard-shell .search-box { width: 34px; height: 36px; }
+  .dashboard-shell .dashboard-content { padding: 22px 16px max(24px, env(safe-area-inset-bottom)); }
+  .dashboard-shell .page-heading { gap: 12px; margin-bottom: 20px; }
+  .dashboard-shell .page-heading h1 { font-size: clamp(28px, 8vw, 36px); line-height: 1.08; }
+  .dashboard-shell .page-heading>div>p { font-size: 14px; line-height: 1.5; }
+  .dashboard-shell .heading-actions { width: 100%; }
+  .dashboard-shell .heading-actions .button { min-height: 46px; }
+  .dashboard-shell .panel { border-radius: 17px; }
+  .dashboard-shell .panel-head { align-items: flex-start; flex-wrap: wrap; }
+  .dashboard-shell .panel-head h2 { font-size: 18px; line-height: 1.25; }
+  .dashboard-shell .panel-head p { font-size: 13px; line-height: 1.5; }
+  .dashboard-shell .panel-head>.button { min-height: 44px; }
+  .dashboard-shell .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .dashboard-shell .stat-card { padding: 14px; border-radius: 14px; }
+  .dashboard-shell .stat-card>div { font-size: 11px; line-height: 1.35; }
+  .dashboard-shell .stat-card>strong { font-size: clamp(19px, 5.5vw, 25px); }
+  .dashboard-shell .stat-card>small { font-size: 10px; line-height: 1.4; }
+  .dashboard-shell .customer-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: 0 14px 14px;
+    padding: 12px;
+  }
+  .dashboard-shell .customer-stats>div {
+    min-width: 0;
+    padding: 9px 10px;
+    border-right: 0;
+    border-bottom: 1px solid #e7ede7;
+  }
+  .dashboard-shell .customer-stats>div:nth-child(odd) { border-right: 1px solid #e7ede7; }
+  .dashboard-shell .customer-stats>div:last-child {
+    grid-column: 1 / -1;
+    border-right: 0;
+    border-bottom: 0;
+    padding-top: 12px;
+  }
+  .dashboard-shell .customer-stats small { font-size: 11px; line-height: 1.4; }
+  .dashboard-shell .customer-stats b { font-size: 21px; line-height: 1.25; overflow-wrap: anywhere; }
+  .dashboard-shell .table-scroll {
+    overflow-x: auto;
+    border-radius: 0 0 16px 16px;
+    scrollbar-width: thin;
+  }
+  .dashboard-shell .table-scroll table { min-width: 650px; }
+  .dashboard-shell .table-scroll th { font-size: 10px; }
+  .dashboard-shell .table-scroll td { font-size: 12px; }
+  .dashboard-shell .table-scroll td>b { font-size: 12px; }
+  .dashboard-shell .table-scroll td small { font-size: 10px; }
+  .dashboard-shell .calendar-panel {
+    padding: 16px 12px 14px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+  .dashboard-shell .calendar-panel>.panel-head { position: sticky; left: 0; }
+  .dashboard-shell .calendar-grid {
+    width: max-content;
+    min-width: 720px;
+    grid-template-columns: 48px repeat(7, 96px);
+    margin-top: 14px;
+  }
+  .dashboard-shell .calendar-head { height: 48px; font-size: 10px; }
+  .dashboard-shell .calendar-row>span { height: 76px; font-size: 10px; }
+  .dashboard-shell .calendar-row>div { min-height: 76px; padding: 4px; scroll-snap-align: start; }
+  .dashboard-shell .calendar-event { min-height: 42px; padding: 6px; gap: 4px; }
+  .dashboard-shell .calendar-event b { font-size: 9px; line-height: 1.25; }
+  .dashboard-shell .calendar-event small { font-size: 8px; line-height: 1.25; }
+  .dashboard-shell .calendar-help { position: sticky; left: 0; font-size: 11px; line-height: 1.5; }
+  .dashboard-shell .filter-tabs { gap: 16px; }
+  .dashboard-shell .filter-tabs button { min-height: 44px; font-size: 11px; }
+  .dashboard-shell .modal-backdrop { padding: 8px; }
+  .dashboard-shell .modal { border-radius: 20px 20px 12px 12px; }
+}
+@media (max-width: 380px) {
+  .marketing-shell { padding-inline: 13px; }
+  .marketing-nav .brand-lockup { font-size: 17px; gap: 6px; }
+  .marketing-actions .button { padding-inline: 9px; font-size: 9px; }
+  .marketing-hero h1 { font-size: 43px; }
+  .dashboard-shell .dashboard-content { padding-inline: 12px; }
+  .dashboard-shell .customer-stats { margin-inline: 10px; padding: 8px; }
+  .dashboard-shell .customer-stats>div { padding-inline: 7px; }
+  .dashboard-shell .calendar-grid { grid-template-columns: 44px repeat(7, 92px); min-width: 688px; }
+}
+
+
+/* Mobile-first customer cards and a compact day-agenda calendar. */
+.customer-mobile-list { display: none; }
+.calendar-toolbar {
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:4px 0 14px;
+}
+.calendar-view-toggle {
+  display:inline-flex;gap:3px;padding:4px;border:1px solid #e8eee8;
+  border-radius:10px;background:#f6f9f6;
+}
+.calendar-view-toggle button {
+  min-height:36px;padding:0 13px;border:0;border-radius:7px;
+  background:transparent;color:#728077;font-size:11px;font-weight:700;
+}
+.calendar-view-toggle button.active { background:#fff;color:#286849;box-shadow:0 1px 4px rgba(20,50,30,.09); }
+.calendar-date-picker { display:flex;align-items:center;gap:8px;color:#7d8a80;font-size:10px;font-weight:700; }
+.calendar-date-picker input { min-height:38px;max-width:150px;padding:0 8px;border:1px solid #e5ebe5;border-radius:8px;background:#fff;color:#34463a;font:inherit; }
+.calendar-day-head { border:1px solid #eff2ef;background:#fbfcfa;cursor:pointer; }
+.calendar-day-head.selected { background:#edf5ef;color:#286849;box-shadow:inset 0 -2px #347653; }
+.calendar-agenda { padding:2px 0 4px; }
+.calendar-agenda-heading { display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 2px 14px;border-bottom:1px solid #edf1ed;color:#35463a;font-size:13px; }
+.calendar-agenda-heading span { color:#89958c;font-size:11px; }
+.calendar-agenda-item { display:grid;grid-template-columns:52px 4px minmax(0,1fr) auto;align-items:center;gap:12px;padding:15px 4px;border-bottom:1px solid #edf1ed; }
+.calendar-agenda-item time { color:#738177;font-size:12px;font-variant-numeric:tabular-nums; }
+.calendar-agenda-item>i { align-self:stretch;min-height:48px;border-radius:8px;background:#86ae91; }
+.calendar-agenda-item>i.peach { background:#d9a07c; }
+.calendar-agenda-item>i.blue { background:#91a5c7; }
+.calendar-agenda-item>i.lilac { background:#a89ac6; }
+.calendar-agenda-item>i.mint { background:#81b7a5; }
+.calendar-agenda-item>div:nth-child(3) { min-width:0; }
+.calendar-agenda-item>div:nth-child(3) b,.calendar-agenda-item>div:nth-child(3) small { display:block;overflow-wrap:anywhere; }
+.calendar-agenda-item>div:nth-child(3) b { color:#34463a;font-size:13px; }
+.calendar-agenda-item>div:nth-child(3) small { margin-top:4px;color:#87938a;font-size:11px; }
+.calendar-agenda-actions { display:flex;flex-direction:column;align-items:flex-end;gap:7px; }
+.calendar-agenda-actions button { min-height:32px;padding:0 10px;border:1px solid #dfe9e1;border-radius:7px;background:#f4f8f4;color:#286849;font-size:10px;font-weight:700; }
+.customer-mobile-card { padding:15px 16px;border-top:1px solid #edf1ed;background:#fff; }
+.customer-mobile-main { display:flex;align-items:center;gap:11px;min-width:0; }
+.customer-initials { display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:13px;background:#edf5ef;color:#347653;font-size:12px;font-weight:800; }
+.customer-mobile-main>div { display:flex;flex-direction:column;min-width:0;gap:4px; }
+.customer-mobile-main>div b { color:#34463a;font-size:13px;overflow-wrap:anywhere; }
+.customer-mobile-main>div small { color:#9aa49c;font-size:10px; }
+.customer-mobile-main>strong { margin-left:auto;color:#34463a;font-size:13px;white-space:nowrap; }
+.customer-mobile-details { display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 0 51px;color:#7e8b81;font-size:11px; }
+.customer-mobile-details a,.customer-mobile-email { color:#397653;text-decoration:none;overflow-wrap:anywhere; }
+.customer-mobile-email { display:block;margin:7px 0 0 51px;font-size:11px; }
+@media(max-width:560px) {
+  .customer-mobile-list { display:block; }
+  .customer-desktop-table { display:none; }
+  .calendar-toolbar { align-items:stretch;flex-direction:column; }
+  .calendar-view-toggle { width:100%; }
+  .calendar-view-toggle button { flex:1; }
+  .calendar-date-picker { justify-content:space-between;min-height:40px; }
+  .calendar-date-picker input { max-width:none;flex:1; }
+  .calendar-agenda-item { grid-template-columns:45px 4px minmax(0,1fr) auto;gap:9px;padding:14px 1px; }
+  .calendar-agenda-item>div:nth-child(3) b { font-size:12px; }
+  .calendar-agenda-item>div:nth-child(3) small { font-size:10px; }
+  .calendar-agenda-actions .status { font-size:9px; }
+  .calendar-agenda-actions button { min-height:34px; }
+}
+
+
+/* Booking cards, navigation touch targets and mobile form ergonomics. */
+.booking-mobile-list { display:none; }
+.booking-mobile-card { padding:15px 16px;border-top:1px solid #edf1ed;background:#fff; }
+.booking-mobile-top { display:flex;align-items:center;justify-content:space-between;gap:10px; }
+.booking-mobile-top>div { display:flex;align-items:center;gap:9px;min-width:0; }
+.booking-mobile-top>div>b { color:#34463a;font-size:13px;overflow-wrap:anywhere; }
+.booking-mobile-time { flex:0 0 auto;padding:6px 8px;border-radius:8px;background:#edf5ef;color:#347653;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums; }
+.booking-mobile-card>p { margin:11px 0;color:#68786e;font-size:12px;line-height:1.45; }
+.booking-mobile-meta { display:flex;align-items:center;flex-wrap:wrap;gap:8px 13px;color:#87938a;font-size:10px; }
+.booking-mobile-meta strong { margin-left:auto;color:#34463a;font-size:12px;white-space:nowrap; }
+.booking-mobile-actions { display:flex;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid #f0f3f0; }
+.booking-mobile-actions button { min-height:38px;flex:1;padding:0 12px;border:1px solid #dce9df;border-radius:8px;background:#286849;color:#fff;font-size:11px;font-weight:800; }
+.booking-mobile-actions button.secondary { background:#fff;color:#7a5d56;border-color:#eee2df; }
+@media(max-width:560px) {
+  .booking-mobile-list { display:block; }
+  .booking-desktop-table { display:none; }
+  .dashboard-shell .sidebar { width:min(310px,86vw);padding:16px 14px max(14px,env(safe-area-inset-bottom)); }
+  .dashboard-shell .sidebar-brand { padding-bottom:17px; }
+  .dashboard-shell .mobile-close,.dashboard-shell .mobile-open { width:42px;height:42px; }
+  .dashboard-shell .business-switch { min-height:58px;margin-bottom:16px; }
+  .dashboard-shell .side-link { min-height:48px;height:48px;font-size:13px;gap:13px;padding:0 13px;margin:3px 0; }
+  .dashboard-shell .side-link svg { width:19px;height:19px; }
+  .dashboard-shell .nav-group { margin-bottom:17px; }
+  .dashboard-shell .nav-label { font-size:9px;letter-spacing:1.3px;padding:0 12px; }
+  .dashboard-shell .sidebar.open { transform:translateX(0); }
+  .dashboard-shell .mobile-scrim { z-index:35; }
+  .dashboard-shell .sidebar { z-index:40; }
+  .dashboard-shell .modal-backdrop { place-items:end center;padding:0; }
+  .dashboard-shell .modal {
+    width:100%;max-width:none;max-height:min(88dvh,calc(100dvh - env(safe-area-inset-top)));
+    overflow-y:auto;overscroll-behavior:contain;
+    padding:20px 18px max(18px,env(safe-area-inset-bottom));
+    border-radius:22px 22px 0 0;
+  }
+  .dashboard-shell .modal-head { position:sticky;top:-20px;z-index:2;background:#fff;padding:10px 0 12px;margin: -10px 0 12px; }
+  .dashboard-shell .modal-form { gap:15px; }
+  .dashboard-shell .field input,.dashboard-shell .field select,.dashboard-shell .field textarea,
+  .dashboard-shell .modal-form input,.dashboard-shell .modal-form select,.dashboard-shell .modal-form textarea {
+    min-height:46px;font-size:16px;
+  }
+  .dashboard-shell .modal-form textarea { min-height:88px; }
+  .dashboard-shell .modal-actions { position:sticky;bottom:-18px;z-index:2;background:#fff;padding:12px 0 max(8px,env(safe-area-inset-bottom)); }
+  .dashboard-shell .modal-actions .button { min-height:44px;flex:1;justify-content:center; }
+}
