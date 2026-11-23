@@ -4,8 +4,8 @@ from decimal import Decimal
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
-import pytest
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
+import pytest, Request
 from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session
 
