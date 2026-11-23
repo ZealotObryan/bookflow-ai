@@ -347,7 +347,7 @@ def test_confirmed_booking_can_be_cancelled_and_releases_reservations(db_session
     db_session.commit()
     created = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)),
         user=user, db=db_session,
     )
     confirm_booking(business.id, created["id"], user, db_session)
@@ -363,7 +363,7 @@ def test_expired_booking_hold_cannot_be_confirmed(db_session, booking_context):
     business, user, customer, employee, service = booking_context
     created = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)),
         user=user, db=db_session,
     )
     booking = db_session.get(__import__("app.models", fromlist=["Booking"]).Booking, created["id"])
@@ -383,7 +383,7 @@ def test_scheduled_hold_cleanup_expires_booking_and_segments(db_session, booking
     business, user, customer, employee, service = booking_context
     created = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)),
         user=user, db=db_session,
     )
     booking = db_session.get(Booking, created["id"])
@@ -406,7 +406,7 @@ def test_booking_list_is_scoped_to_authenticated_business(db_session, booking_co
     created = create_booking(
         business_id=business.id,
         payload=request_for(
-            customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC,
+            customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC),
             "booking-list-test-0001",
         ),
         user=user,
