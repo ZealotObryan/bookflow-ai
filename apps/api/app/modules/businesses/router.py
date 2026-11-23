@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.security import hash_refresh_token
-from app.db.session import get_db, set_tenant_context
+from app.db.session import get_db, set_tenant_context, set_user_context
 from app.integrations.email import EmailDeliveryError, send_transactional_email
 from app.models import (
     AuditEvent,
@@ -103,6 +103,7 @@ def create_business(
         _audit(db, business_id=business.id, actor_id=user.id, action="business.created",
                target_type="business", target_id=str(business.id), metadata={"name": business.name})
         db.commit()
+        set_user_context(db, user.id, user.email_normalized)
         db.refresh(business)
         db.refresh(membership)
     except IntegrityError:
@@ -238,6 +239,8 @@ def create_invitation(
         # Commit the invitation before sending mail. This avoids sending a link
         # for a transaction that later rolls back.
         db.commit()
+        set_user_context(db, user.id, user.email_normalized)
+        set_tenant_context(db, business.id)
         db.refresh(invitation)
     except IntegrityError:
         db.rollback()
@@ -311,6 +314,7 @@ def accept_invitation(
            metadata={"role": invitation.role})
     try:
         db.commit()
+        set_user_context(db, user.id, user.email_normalized)
         db.refresh(membership)
     except IntegrityError:
         db.rollback()
