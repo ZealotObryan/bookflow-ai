@@ -1070,3 +1070,31 @@ input, select, textarea { max-width: 100%; }
   .dashboard-shell .calendar-agenda-item { grid-template-columns: 38px 3px minmax(0, 1fr); gap: 7px; }
   .dashboard-shell .calendar-agenda-item > div:nth-child(3) b { font-size: 11px; }
 }
+
+
+/* Team/resource controls: clearer grouping, focus visibility and robust long labels. */
+.dashboard-shell .team-card .link-button,
+.dashboard-shell .resource-line .link-button {
+  border-radius: 8px;
+  padding: 0 10px;
+}
+.dashboard-shell .team-card .link-button:focus-visible,
+.dashboard-shell .resource-line .link-button:focus-visible,
+.dashboard-shell .team-intro .button:focus-visible {
+  outline: 3px solid rgba(52, 118, 83, .28);
+  outline-offset: 2px;
+}
+.dashboard-shell .resource-line {
+  border-bottom: 1px solid #edf1ed;
+}
+.dashboard-shell .resource-line:last-child { border-bottom: 0; }
+.dashboard-shell .resource-line > small { overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+  .dashboard-shell .team-intro .inline-actions .button { min-height: 44px; }
+  .dashboard-shell .resource-line { padding-block: 14px; }
+  .dashboard-shell .resource-line .link-button { min-height: 40px; }
+}
+@media (max-width: 420px) {
+  .dashboard-shell .resource-line .status { margin-top: 2px; }
+  .dashboard-shell .resource-line .link-button { min-height: 42px; padding-inline: 12px; }
+}
