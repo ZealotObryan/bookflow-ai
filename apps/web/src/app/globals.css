@@ -1098,3 +1098,44 @@ input, select, textarea { max-width: 100%; }
   .dashboard-shell .resource-line .status { margin-top: 2px; }
   .dashboard-shell .resource-line .link-button { min-height: 42px; padding-inline: 12px; }
 }
+
+
+/* Public booking page: responsive service selection, availability and customer form. */
+.public-booking-page { width: min(100%, 760px); min-width: 0; }
+.public-booking-page .marketing-nav { min-width: 0; }
+.public-booking-page .public-service-option,
+.public-booking-page .public-slot-option { min-height: 44px; touch-action: manipulation; }
+.public-booking-page .public-service-option { width: 100%; }
+.public-booking-page .public-service-option:focus-visible,
+.public-booking-page .public-slot-option:focus-visible,
+.public-booking-page form button:focus-visible,
+.public-booking-page form input:focus-visible {
+  outline: 3px solid rgba(35, 104, 78, .28);
+  outline-offset: 2px;
+}
+.public-booking-page form input { width: 100%; min-width: 0; min-height: 46px; font: inherit; }
+.public-booking-page form button[type="submit"] { min-height: 48px; }
+.public-booking-page #bookflow-turnstile { max-width: 100%; overflow-x: auto; }
+@media (max-width: 800px) {
+  .public-booking-page { padding-inline: 20px !important; }
+  .public-booking-page > section:first-of-type { padding-top: 42px !important; }
+}
+@media (max-width: 560px) {
+  .public-booking-page { padding-inline: 14px !important; padding-bottom: max(32px, env(safe-area-inset-bottom)) !important; }
+  .public-booking-page .marketing-nav { height: 62px; }
+  .public-booking-page > section:first-of-type { padding: 34px 0 22px !important; }
+  .public-booking-page > section:first-of-type h1 { font-size: clamp(30px, 9vw, 42px) !important; letter-spacing: -.045em !important; overflow-wrap: anywhere; }
+  .public-booking-page > section:nth-of-type(2) { padding: 18px !important; border-radius: 14px !important; }
+  .public-booking-page .public-service-option { padding: 13px !important; }
+  .public-booking-page .public-service-option > span:first-child { align-items: flex-start; flex-wrap: wrap; }
+  .public-booking-page .public-service-option > span:first-child > span:last-child { white-space: nowrap; }
+  .public-booking-page .public-slot-option { min-width: 72px; min-height: 44px; flex: 1 0 27%; padding-inline: 9px !important; }
+  .public-booking-page form { gap: 13px !important; }
+  .public-booking-page form input { font-size: 16px !important; }
+  .public-booking-page #bookflow-turnstile { min-height: 66px; }
+}
+@media (max-width: 360px) {
+  .public-booking-page { padding-inline: 10px !important; }
+  .public-booking-page > section:nth-of-type(2) { padding: 14px !important; }
+  .public-booking-page .nav-login { font-size: 8px; letter-spacing: .6px; }
+}
