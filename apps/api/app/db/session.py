@@ -62,15 +62,3 @@ def set_tenant_context(db: Session, business_id) -> None:
         {"business_id": str(business_id)},
     )
 
-
-def set_user_context(db: Session, user_id, email: str) -> None:
-    """Set authenticated identity context for transaction-scoped RLS policies."""
-    if db.get_bind().dialect.name != "postgresql":
-        return
-    from sqlalchemy import text
-
-    db.execute(
-        text("SELECT set_config('app.current_user_id', :user_id, true), "
-             "set_config('app.current_user_email', :email, true)"),
-        {"user_id": str(user_id), "email": email.strip().casefold()},
-    )
