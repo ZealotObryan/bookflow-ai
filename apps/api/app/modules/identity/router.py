@@ -28,7 +28,7 @@ from app.core.security import (
     new_refresh_token,
     verify_password,
 )
-from app.db.session import get_db
+from app.db.session import get_db, set_user_context
 from app.integrations.email import EmailDeliveryError, send_transactional_email
 from app.integrations.tumasend import TumaSendClient, TumaSendError
 from app.models import AuthSession, AuthToken, PhoneOtpChallenge, User
@@ -170,6 +170,9 @@ def get_current_user(
 
     session.last_used_at = now
     db.commit()
+    # Authentication's commit ends its transaction; set the identity context
+    # afterwards so it applies to the protected request transaction.
+    set_user_context(db, user.id, user.email_normalized)
     return user
 
 
