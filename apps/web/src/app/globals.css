@@ -891,3 +891,86 @@ button,a,[role="button"],summary{-webkit-tap-highlight-color:transparent}
   .dashboard-shell .modal-actions { position:sticky;bottom:-18px;z-index:2;background:#fff;padding:12px 0 max(8px,env(safe-area-inset-bottom)); }
   .dashboard-shell .modal-actions .button { min-height:44px;flex:1;justify-content:center; }
 }
+
+
+/* BookFlow AI responsive foundation: fluid sizing, intrinsic layout and accessible motion. */
+:root {
+  --space-1: clamp(0.5rem, 0.45rem + 0.2vw, 0.625rem);
+  --space-2: clamp(0.75rem, 0.65rem + 0.35vw, 1rem);
+  --space-3: clamp(1rem, 0.85rem + 0.55vw, 1.375rem);
+  --space-4: clamp(1.25rem, 1rem + 0.9vw, 1.875rem);
+  --space-5: clamp(1.75rem, 1.35rem + 1.4vw, 2.75rem);
+  --space-6: clamp(2.25rem, 1.7rem + 2vw, 3.75rem);
+  --type-sm: clamp(.8125rem, .78rem + .12vw, .9rem);
+  --type-base: clamp(.9375rem, .9rem + .16vw, 1.0625rem);
+  --type-lg: clamp(1.125rem, 1rem + .45vw, 1.375rem);
+  --type-xl: clamp(1.5rem, 1.25rem + .9vw, 2rem);
+  --page-gutter: clamp(1rem, 3.2vw, 2.75rem);
+  --content-max: 90rem;
+  --tap-min: 44px;
+}
+
+html { scroll-padding-top: var(--space-5); }
+body { min-width: 320px; font-size: var(--type-base); }
+img, picture, video, canvas, svg { max-width: 100%; }
+button, [role="button"], input[type="button"], input[type="submit"],
+a.button, .button { min-height: var(--tap-min); }
+input, select, textarea { max-width: 100%; }
+:where(.dashboard-content, .marketing-shell, .panel, .modal, .feature-card) {
+  min-width: 0;
+}
+:where(.panel, .feature-card, .stat-card, .modal, .calendar-panel) {
+  container-type: inline-size;
+  container-name: bookflow-component;
+}
+:where(.dashboard-content, .marketing-shell) {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+}
+:where(.dashboard-content) { padding-inline: var(--page-gutter); }
+:where(.marketing-shell) { padding-inline: clamp(1rem, 5vw, 5.5rem); }
+
+/* Prefer intrinsic wrapping over viewport-specific width assumptions. */
+:where(.feature-grid, .stats-grid, .dashboard-grid, .settings-grid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+:where(.hero-cta-row, .heading-actions, .panel-head, .calendar-toolbar) {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+:where(.dashboard-shell, .marketing-shell) { min-height: 100dvh; }
+:where(.modal, .sidebar, .dashboard-content) {
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+}
+:where(.dashboard-shell .sidebar, .dashboard-shell .modal) {
+  overscroll-behavior: contain;
+}
+:where(button, a, input, select, textarea) {
+  touch-action: manipulation;
+}
+:where(button, a, input, select, textarea):focus-visible {
+  outline-offset: 3px;
+}
+@media (hover: none) {
+  .button:hover, .feature-card:hover { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Components can adapt to their own available width, not just the viewport. */
+@container bookflow-component (max-width: 520px) {
+  .panel-head { align-items: flex-start; flex-wrap: wrap; }
+  .panel-head > :where(button, a) { max-width: 100%; }
+  .stat-card { min-width: 0; }
+}
+@container bookflow-component (max-width: 360px) {
+  .panel-head h2 { font-size: 1rem; }
+  .calendar-toolbar { align-items: stretch; }
+}
