@@ -1024,3 +1024,49 @@ input, select, textarea { max-width: 100%; }
   .dashboard-content .stats-grid { grid-template-columns: minmax(0, 1fr); }
   .dashboard-content .page-heading h1 { font-size: 1.55rem; }
 }
+
+
+/* Calendar and booking interaction polish for touch-first screens. */
+.dashboard-shell .calendar-view-toggle button,
+.dashboard-shell .calendar-day-head,
+.dashboard-shell .calendar-agenda-actions button,
+.dashboard-shell .booking-mobile-actions button {
+  touch-action: manipulation;
+}
+.dashboard-shell .calendar-agenda-item { min-width: 0; }
+.dashboard-shell .calendar-agenda-actions .status { white-space: nowrap; }
+.dashboard-shell .calendar-help { max-width: 70ch; line-height: 1.55; }
+.dashboard-shell .calendar-grid { overscroll-behavior-x: contain; }
+.dashboard-shell .calendar-event { min-width: 0; overflow-wrap: anywhere; }
+.dashboard-shell .booking-mobile-card { min-width: 0; }
+.dashboard-shell .booking-mobile-top .status { flex: 0 0 auto; }
+.dashboard-shell .booking-mobile-actions button { min-width: 0; }
+@media (max-width: 560px) {
+  .dashboard-shell .calendar-agenda-heading { align-items: flex-start; flex-wrap: wrap; }
+  .dashboard-shell .calendar-agenda-item {
+    grid-template-columns: 43px 4px minmax(0, 1fr);
+    align-items: start;
+    gap: 9px;
+    padding: 14px 0;
+  }
+  .dashboard-shell .calendar-agenda-item time { padding-top: 3px; }
+  .dashboard-shell .calendar-agenda-item > i { min-height: 58px; }
+  .dashboard-shell .calendar-agenda-actions {
+    grid-column: 3;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-top: 2px;
+  }
+  .dashboard-shell .calendar-agenda-actions button { min-height: 40px; padding-inline: 13px; }
+  .dashboard-shell .calendar-help { font-size: 11px; }
+  .dashboard-shell .booking-mobile-card { padding-inline: 13px; }
+  .dashboard-shell .booking-mobile-actions button { min-height: 42px; }
+}
+@media (max-width: 360px) {
+  .dashboard-shell .booking-mobile-top { align-items: flex-start; flex-direction: column; }
+  .dashboard-shell .booking-mobile-meta strong { margin-left: 0; }
+  .dashboard-shell .calendar-agenda-item { grid-template-columns: 38px 3px minmax(0, 1fr); gap: 7px; }
+  .dashboard-shell .calendar-agenda-item > div:nth-child(3) b { font-size: 11px; }
+}
