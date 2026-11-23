@@ -61,6 +61,17 @@ These are complementary controls. RLS tenant isolation alone does not distinguis
 ### SEC-06 — Indirect access paths need inventory
 **Risk:** Medium/High. Review database functions, views, triggers, background scripts, reporting queries, webhook handlers and external integration endpoints for access outside the normal tenant-aware request path.
 
+## Implementation progress — 2026-11-23
+
+- Added transaction-local authenticated user ID and normalized email context for membership discovery and invitation acceptance.
+- Added forced RLS policies for `business_memberships` and `business_invitations`.
+- Membership and invitation writes now require the selected tenant context; identity context is read-only for discovering the user's own memberships or invitations addressed to their verified email. This prevents self-enrolment or invitation creation in an unrelated tenant using only an identity setting.
+- Restored user/tenant context after commits in business creation and invitation workflows where a subsequent refresh/read is required.
+- Added PostgreSQL integration coverage for missing context, own-membership visibility, cross-tenant membership/invitation write rejection, tenant-scoped visibility, invitee email visibility, and transaction-local context reset.
+- Replaced stale fixed booking-test dates with the next Monday so scheduling tests remain valid as time advances.
+
+**Validation status:** PostgreSQL migrations and Ruff lint passed in the first CI run. The full suite reported 87 passed and 15 failures, all in pre-existing booking tests that used dates which had become past appointments. The fixture dates have now been made relative; a fresh CI run is pending. The newly added membership/invitation integration tests have not yet been confirmed green. Production DB-role verification, SECURITY DEFINER review, and route/worker access inventory remain open.
+
 ## Verification plan
 
 Before merge:
