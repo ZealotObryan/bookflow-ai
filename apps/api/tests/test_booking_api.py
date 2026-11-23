@@ -244,7 +244,7 @@ def test_resource_capacity_is_reserved_with_booking(db_session, booking_context)
     db_session.commit()
     result = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC, "resource-reservation-01"),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC), "resource-reservation-01"),
         user=user, db=db_session,
     )
     allocation = db_session.query(BookingSegmentResource).filter_by(
@@ -322,7 +322,7 @@ def test_booking_can_be_confirmed_and_hold_is_cleared(db_session, booking_contex
     business, user, customer, employee, service = booking_context
     created = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)),
         user=user, db=db_session,
     )
     confirmed = confirm_booking(business.id, created["id"], user, db_session)
