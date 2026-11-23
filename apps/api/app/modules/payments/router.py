@@ -108,5 +108,6 @@ def record_manual_payment(
         },
     ))
     db.commit()
+    set_tenant_context(db, business.id)
     db.refresh(payment)
     return payment
