@@ -1,9 +1,9 @@
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, UTC
 from decimal import Decimal
 from uuid import uuid4
 
-import pytest
 from fastapi import HTTPException
+import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 
