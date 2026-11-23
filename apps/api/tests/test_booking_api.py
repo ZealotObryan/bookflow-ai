@@ -104,7 +104,7 @@ def request_for(customer, service, employee, starts_at, key="idempotency-0001"):
 
 def test_booking_creation_holds_slot_and_includes_buffers(db_session, booking_context):
     business, user, customer, employee, service = booking_context
-    start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC
+    start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
 
     result = create_booking(
         business_id=business.id,
@@ -125,7 +125,7 @@ def test_booking_creation_holds_slot_and_includes_buffers(db_session, booking_co
 
 def test_booking_idempotency_prevents_duplicate_records(db_session, booking_context):
     business, user, customer, employee, service = booking_context
-    start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC
+    start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
     payload = request_for(customer, service, employee, start)
 
     first = create_booking(business_id=business.id, payload=payload, user=user, db=db_session)
@@ -136,7 +136,7 @@ def test_booking_idempotency_prevents_duplicate_records(db_session, booking_cont
 
 def test_overlapping_employee_reservation_is_rejected(db_session, booking_context):
     business, user, customer, employee, service = booking_context
-    first_start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC
+    first_start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
     create_booking(
         business_id=business.id,
         payload=request_for(customer, service, employee, first_start, "idempotency-first"),
@@ -162,7 +162,7 @@ def test_booking_outside_business_hours_is_rejected(db_session, booking_context)
         create_booking(
             business_id=business.id,
             payload=request_for(
-                customer, service, employee, datetime.combine(BOOKING_DAY, time(18), tzinfo=UTC
+                customer, service, employee, datetime.combine(BOOKING_DAY, time(18), tzinfo=UTC)
             ),
             user=user,
             db=db_session,
@@ -192,7 +192,7 @@ def test_availability_returns_only_valid_employee_slots(db_session, booking_cont
 
 def test_availability_excludes_existing_employee_hold(db_session, booking_context):
     business, user, customer, employee, service = booking_context
-    booked_start = datetime.combine(BOOKING_DAY, time(6, 30), tzinfo=UTC
+    booked_start = datetime.combine(BOOKING_DAY, time(6, 30), tzinfo=UTC)
     create_booking(
         business_id=business.id,
         payload=request_for(customer, service, employee, booked_start, "availability-hold-01"),
@@ -266,7 +266,7 @@ def test_resource_capacity_prevents_overlapping_booking(db_session, booking_cont
         business_id=business.id, service_id=service.id, resource_id=resource.id, quantity=1
     ))
     db_session.commit()
-    start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC
+    start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
     first_payload = BookingInput(
         customer_id=customer.id,
         idempotency_key="resource-first-01",
@@ -296,7 +296,7 @@ def test_availability_excludes_slots_when_required_resource_is_full(db_session, 
         business_id=business.id, service_id=service.id, resource_id=resource.id, quantity=1
     ))
     db_session.commit()
-    booked_start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC
+    booked_start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
     create_booking(
         business_id=business.id,
         payload=request_for(customer, service, employee, booked_start, "availability-resource-full"),
