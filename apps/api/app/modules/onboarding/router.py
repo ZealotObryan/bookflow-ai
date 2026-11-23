@@ -33,6 +33,7 @@ def get_onboarding_progress(
         progress = BusinessOnboardingProgress(business_id=business.id)
         db.add(progress)
         db.commit()
+        set_tenant_context(db, business.id)
         db.refresh(progress)
     return progress
 
@@ -57,5 +58,6 @@ def update_onboarding_progress(
     progress.completed_steps = payload.completed_steps
     progress.dismissed = payload.dismissed
     db.commit()
+    set_tenant_context(db, business.id)
     db.refresh(progress)
     return progress
