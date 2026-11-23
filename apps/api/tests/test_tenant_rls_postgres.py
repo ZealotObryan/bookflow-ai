@@ -164,6 +164,25 @@ def test_membership_and_invitation_rls_identity_and_tenant_boundaries() -> None:
                 )
             tx.rollback()
 
+        # Identity alone must not authorize an inviter to create an invitation
+        # in a different business; the write needs the selected tenant context.
+        with engine.connect() as connection:
+            tx = connection.begin()
+            connection.execute(text(f'SET ROLE "{role}"'))
+            connection.execute(
+                text("SELECT set_config('app.current_user_id', :user_id, true)"),
+                {"user_id": str(owner_id)},
+            )
+            with pytest.raises(DBAPIError):
+                connection.execute(
+                    text("INSERT INTO business_invitations "
+                         "(id, business_id, invited_by_user_id, email_normalized, role, token_hash, expires_at) "
+                         "VALUES (:id, :business, :owner, 'attacker@example.com', 'staff', :token, now() + interval '1 hour')"),
+                    {"id": uuid.uuid4(), "business": second_business, "owner": owner_id,
+                     "token": uuid.uuid4().hex * 2},
+                )
+            tx.rollback()
+
         # Tenant context reveals only rows belonging to that tenant.
         with engine.connect() as connection:
             tx = connection.begin()
