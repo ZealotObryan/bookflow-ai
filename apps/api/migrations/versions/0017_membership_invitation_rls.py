@@ -45,8 +45,7 @@ def upgrade() -> None:
             OR business_id = NULLIF(current_setting('app.current_business_id', true), '')::uuid
         )
         WITH CHECK (
-            invited_by_user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid
-            OR business_id = NULLIF(current_setting('app.current_business_id', true), '')::uuid
+            business_id = NULLIF(current_setting('app.current_business_id', true), '')::uuid
         )
     """)
 
