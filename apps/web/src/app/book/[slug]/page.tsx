@@ -206,7 +206,7 @@ export default function PublicBookingPage() {
 
   const service = business?.services.find((item) => item.id === selectedService);
   return (
-    <main className="marketing-shell" style={{ maxWidth: 760, paddingBottom: 80 }}>
+    <main className="marketing-shell public-booking-page" style={{ maxWidth: 760, paddingBottom: 80 }}>
       <header className="marketing-nav">
         <Link className="brand-lockup" href="/"><span className="brand-symbol">B</span><span>BookFlow<span className="brand-period">.</span></span><span className="brand-ai">Ai</span></Link>
         <span className="nav-login">SECURE ONLINE BOOKING</span>
@@ -222,7 +222,7 @@ export default function PublicBookingPage() {
         {business?.services.length ? (
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
             {business.services.map((item) => (
-              <button key={item.id} type="button" onClick={() => setSelectedService(item.id)} aria-pressed={selectedService === item.id}
+              <button className="public-service-option" key={item.id} type="button" onClick={() => setSelectedService(item.id)} aria-pressed={selectedService === item.id}
                 style={{ textAlign: "left", padding: 16, borderRadius: 10, border: selectedService === item.id ? "1.5px solid #23684e" : "1px solid #e8ece7", background: selectedService === item.id ? "#f1f7f2" : "#fff", color: "#182720" }}>
                 <span style={{ display: "flex", justifyContent: "space-between", gap: 12, fontWeight: 700 }}><span>{item.name}</span><span>{money(item.price_amount, item.currency)}</span></span>
                 <span style={{ display: "block", color: "#78837d", fontSize: 12, marginTop: 6 }}>{item.duration_minutes} minutes{item.description ? ` · ${item.description}` : ""}</span>
@@ -241,7 +241,7 @@ export default function PublicBookingPage() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 9, marginTop: 14 }}>
               {slots.map((slot) => {
                 const value = new Intl.DateTimeFormat("en-GB", { timeZone: business?.timezone, hour: "2-digit", minute: "2-digit" }).format(new Date(slot.starts_at));
-                return <button key={slot.starts_at} type="button" aria-pressed={selectedSlot === slot.starts_at} onClick={() => { if (selectedSlot !== slot.starts_at) setIdempotencyKey(""); setSelectedSlot(slot.starts_at); }}
+                return <button className="public-slot-option" key={slot.starts_at} type="button" aria-pressed={selectedSlot === slot.starts_at} onClick={() => { if (selectedSlot !== slot.starts_at) setIdempotencyKey(""); setSelectedSlot(slot.starts_at); }}
                   style={{ border: selectedSlot === slot.starts_at ? "1.5px solid #23684e" : "1px solid #dfe6df", borderRadius: 8, padding: "10px 15px", background: selectedSlot === slot.starts_at ? "#eaf3ed" : "#fff", color: "#23684e", fontWeight: 700 }}>{value}</button>;
               })}
             </div>

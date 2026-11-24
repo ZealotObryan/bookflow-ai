@@ -891,3 +891,251 @@ button,a,[role="button"],summary{-webkit-tap-highlight-color:transparent}
   .dashboard-shell .modal-actions { position:sticky;bottom:-18px;z-index:2;background:#fff;padding:12px 0 max(8px,env(safe-area-inset-bottom)); }
   .dashboard-shell .modal-actions .button { min-height:44px;flex:1;justify-content:center; }
 }
+
+
+/* BookFlow AI responsive foundation: fluid sizing, intrinsic layout and accessible motion. */
+:root {
+  --space-1: clamp(0.5rem, 0.45rem + 0.2vw, 0.625rem);
+  --space-2: clamp(0.75rem, 0.65rem + 0.35vw, 1rem);
+  --space-3: clamp(1rem, 0.85rem + 0.55vw, 1.375rem);
+  --space-4: clamp(1.25rem, 1rem + 0.9vw, 1.875rem);
+  --space-5: clamp(1.75rem, 1.35rem + 1.4vw, 2.75rem);
+  --space-6: clamp(2.25rem, 1.7rem + 2vw, 3.75rem);
+  --type-sm: clamp(.8125rem, .78rem + .12vw, .9rem);
+  --type-base: clamp(.9375rem, .9rem + .16vw, 1.0625rem);
+  --type-lg: clamp(1.125rem, 1rem + .45vw, 1.375rem);
+  --type-xl: clamp(1.5rem, 1.25rem + .9vw, 2rem);
+  --page-gutter: clamp(1rem, 3.2vw, 2.75rem);
+  --content-max: 90rem;
+  --tap-min: 44px;
+}
+
+html { scroll-padding-top: var(--space-5); }
+body { min-width: 320px; font-size: var(--type-base); }
+img, picture, video, canvas, svg { max-width: 100%; }
+button, [role="button"], input[type="button"], input[type="submit"],
+a.button, .button { min-height: var(--tap-min); }
+input, select, textarea { max-width: 100%; }
+:where(.dashboard-content, .marketing-shell, .panel, .modal, .feature-card) {
+  min-width: 0;
+}
+:where(.panel, .feature-card, .stat-card, .modal, .calendar-panel) {
+  container-type: inline-size;
+  container-name: bookflow-component;
+}
+:where(.dashboard-content, .marketing-shell) {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+}
+:where(.dashboard-content) { padding-inline: var(--page-gutter); }
+:where(.marketing-shell) { padding-inline: clamp(1rem, 5vw, 5.5rem); }
+
+/* Prefer intrinsic wrapping over viewport-specific width assumptions. */
+:where(.feature-grid, .stats-grid, .dashboard-grid, .settings-grid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+:where(.hero-cta-row, .heading-actions, .panel-head, .calendar-toolbar) {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+:where(.dashboard-shell, .marketing-shell) { min-height: 100dvh; }
+:where(.modal, .sidebar, .dashboard-content) {
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+}
+:where(.dashboard-shell .sidebar, .dashboard-shell .modal) {
+  overscroll-behavior: contain;
+}
+:where(button, a, input, select, textarea) {
+  touch-action: manipulation;
+}
+:where(button, a, input, select, textarea):focus-visible {
+  outline-offset: 3px;
+}
+@media (hover: none) {
+  .button:hover, .feature-card:hover { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Components can adapt to their own available width, not just the viewport. */
+@container bookflow-component (max-width: 520px) {
+  .panel-head { align-items: flex-start; flex-wrap: wrap; }
+  .panel-head > :where(button, a) { max-width: 100%; }
+  .stat-card { min-width: 0; }
+}
+@container bookflow-component (max-width: 360px) {
+  .panel-head h2 { font-size: 1rem; }
+  .calendar-toolbar { align-items: stretch; }
+}
+
+
+/* Dashboard composition refinements: prevent nested content from forcing viewport overflow. */
+.dashboard-shell { overflow-x: clip; }
+.dashboard-main { min-width: 0; width: calc(100% - 248px); }
+.dashboard-content { min-width: 0; width: 100%; }
+.dashboard-topbar { min-width: 0; }
+.dashboard-topbar .top-left, .dashboard-topbar .top-right { min-width: 0; }
+.dashboard-content .content-grid,
+.dashboard-content .panel,
+.dashboard-content .stats-grid,
+.dashboard-content .page-heading { min-width: 0; }
+.dashboard-content .page-heading > div:first-child { min-width: 0; }
+.dashboard-content .page-heading h1 { overflow-wrap: anywhere; }
+.dashboard-content .panel-head > div { min-width: 0; }
+.dashboard-content .panel-head p,
+.dashboard-content .page-heading p { overflow-wrap: anywhere; }
+
+@media (max-width: 1100px) {
+  .dashboard-main { width: calc(100% - 220px); }
+  .dashboard-content { padding-inline: clamp(16px, 2.5vw, 28px); }
+}
+@media (max-width: 800px) {
+  .dashboard-main { width: 100%; margin-left: 0; }
+  .dashboard-topbar { min-height: 60px; height: auto; padding: 8px 16px; gap: 10px; }
+  .dashboard-topbar .breadcrumbs { min-width: 0; }
+  .dashboard-topbar .breadcrumbs b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dashboard-content { padding: 22px var(--page-gutter) max(24px, env(safe-area-inset-bottom)); }
+  .dashboard-content .page-heading { align-items: flex-start; gap: var(--space-3); }
+  .dashboard-content .heading-actions { width: 100%; }
+  .dashboard-content .heading-actions > .button { width: 100%; }
+  .dashboard-content .content-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .dashboard-topbar { padding-inline: 12px; }
+  .dashboard-topbar .top-right { gap: 6px; }
+  .dashboard-topbar .top-avatar { flex: 0 0 30px; }
+  .dashboard-content { padding-top: 18px; }
+  .dashboard-content .page-heading h1 { font-size: clamp(1.65rem, 7vw, 2.15rem); letter-spacing: -.055em; }
+  .dashboard-content .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-content .panel { border-radius: 14px; }
+  .dashboard-content .panel-head { gap: 10px; }
+  .dashboard-content .panel-head > .button,
+  .dashboard-content .panel-head > a.button { width: 100%; }
+  .dashboard-content .calendar-panel { max-width: 100%; }
+}
+@media (max-width: 360px) {
+  .dashboard-content .stats-grid { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-content .page-heading h1 { font-size: 1.55rem; }
+}
+
+
+/* Calendar and booking interaction polish for touch-first screens. */
+.dashboard-shell .calendar-view-toggle button,
+.dashboard-shell .calendar-day-head,
+.dashboard-shell .calendar-agenda-actions button,
+.dashboard-shell .booking-mobile-actions button {
+  touch-action: manipulation;
+}
+.dashboard-shell .calendar-agenda-item { min-width: 0; }
+.dashboard-shell .calendar-agenda-actions .status { white-space: nowrap; }
+.dashboard-shell .calendar-help { max-width: 70ch; line-height: 1.55; }
+.dashboard-shell .calendar-grid { overscroll-behavior-x: contain; }
+.dashboard-shell .calendar-event { min-width: 0; overflow-wrap: anywhere; }
+.dashboard-shell .booking-mobile-card { min-width: 0; }
+.dashboard-shell .booking-mobile-top .status { flex: 0 0 auto; }
+.dashboard-shell .booking-mobile-actions button { min-width: 0; }
+@media (max-width: 560px) {
+  .dashboard-shell .calendar-agenda-heading { align-items: flex-start; flex-wrap: wrap; }
+  .dashboard-shell .calendar-agenda-item {
+    grid-template-columns: 43px 4px minmax(0, 1fr);
+    align-items: start;
+    gap: 9px;
+    padding: 14px 0;
+  }
+  .dashboard-shell .calendar-agenda-item time { padding-top: 3px; }
+  .dashboard-shell .calendar-agenda-item > i { min-height: 58px; }
+  .dashboard-shell .calendar-agenda-actions {
+    grid-column: 3;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-top: 2px;
+  }
+  .dashboard-shell .calendar-agenda-actions button { min-height: 40px; padding-inline: 13px; }
+  .dashboard-shell .calendar-help { font-size: 11px; }
+  .dashboard-shell .booking-mobile-card { padding-inline: 13px; }
+  .dashboard-shell .booking-mobile-actions button { min-height: 42px; }
+}
+@media (max-width: 360px) {
+  .dashboard-shell .booking-mobile-top { align-items: flex-start; flex-direction: column; }
+  .dashboard-shell .booking-mobile-meta strong { margin-left: 0; }
+  .dashboard-shell .calendar-agenda-item { grid-template-columns: 38px 3px minmax(0, 1fr); gap: 7px; }
+  .dashboard-shell .calendar-agenda-item > div:nth-child(3) b { font-size: 11px; }
+}
+
+
+/* Team/resource controls: clearer grouping, focus visibility and robust long labels. */
+.dashboard-shell .team-card .link-button,
+.dashboard-shell .resource-line .link-button {
+  border-radius: 8px;
+  padding: 0 10px;
+}
+.dashboard-shell .team-card .link-button:focus-visible,
+.dashboard-shell .resource-line .link-button:focus-visible,
+.dashboard-shell .team-intro .button:focus-visible {
+  outline: 3px solid rgba(52, 118, 83, .28);
+  outline-offset: 2px;
+}
+.dashboard-shell .resource-line {
+  border-bottom: 1px solid #edf1ed;
+}
+.dashboard-shell .resource-line:last-child { border-bottom: 0; }
+.dashboard-shell .resource-line > small { overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+  .dashboard-shell .team-intro .inline-actions .button { min-height: 44px; }
+  .dashboard-shell .resource-line { padding-block: 14px; }
+  .dashboard-shell .resource-line .link-button { min-height: 40px; }
+}
+@media (max-width: 420px) {
+  .dashboard-shell .resource-line .status { margin-top: 2px; }
+  .dashboard-shell .resource-line .link-button { min-height: 42px; padding-inline: 12px; }
+}
+
+
+/* Public booking page: responsive service selection, availability and customer form. */
+.public-booking-page { width: min(100%, 760px); min-width: 0; }
+.public-booking-page .marketing-nav { min-width: 0; }
+.public-booking-page .public-service-option,
+.public-booking-page .public-slot-option { min-height: 44px; touch-action: manipulation; }
+.public-booking-page .public-service-option { width: 100%; }
+.public-booking-page .public-service-option:focus-visible,
+.public-booking-page .public-slot-option:focus-visible,
+.public-booking-page form button:focus-visible,
+.public-booking-page form input:focus-visible {
+  outline: 3px solid rgba(35, 104, 78, .28);
+  outline-offset: 2px;
+}
+.public-booking-page form input { width: 100%; min-width: 0; min-height: 46px; font: inherit; }
+.public-booking-page form button[type="submit"] { min-height: 48px; }
+.public-booking-page #bookflow-turnstile { max-width: 100%; overflow-x: auto; }
+@media (max-width: 800px) {
+  .public-booking-page { padding-inline: 20px !important; }
+  .public-booking-page > section:first-of-type { padding-top: 42px !important; }
+}
+@media (max-width: 560px) {
+  .public-booking-page { padding-inline: 14px !important; padding-bottom: max(32px, env(safe-area-inset-bottom)) !important; }
+  .public-booking-page .marketing-nav { height: 62px; }
+  .public-booking-page > section:first-of-type { padding: 34px 0 22px !important; }
+  .public-booking-page > section:first-of-type h1 { font-size: clamp(30px, 9vw, 42px) !important; letter-spacing: -.045em !important; overflow-wrap: anywhere; }
+  .public-booking-page > section:nth-of-type(2) { padding: 18px !important; border-radius: 14px !important; }
+  .public-booking-page .public-service-option { padding: 13px !important; }
+  .public-booking-page .public-service-option > span:first-child { align-items: flex-start; flex-wrap: wrap; }
+  .public-booking-page .public-service-option > span:first-child > span:last-child { white-space: nowrap; }
+  .public-booking-page .public-slot-option { min-width: 72px; min-height: 44px; flex: 1 0 27%; padding-inline: 9px !important; }
+  .public-booking-page form { gap: 13px !important; }
+  .public-booking-page form input { font-size: 16px !important; }
+  .public-booking-page #bookflow-turnstile { min-height: 66px; }
+}
+@media (max-width: 360px) {
+  .public-booking-page { padding-inline: 10px !important; }
+  .public-booking-page > section:nth-of-type(2) { padding: 14px !important; }
+  .public-booking-page .nav-login { font-size: 8px; letter-spacing: .6px; }
+}
