@@ -2,8 +2,8 @@ from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
-import pytest
 from fastapi import HTTPException
+import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 
@@ -24,6 +24,10 @@ from app.models import (
 )
 from app.modules.bookings.availability import get_availability
 from app.modules.bookings.router import BookingInput, SegmentInput, create_booking
+
+
+# Booking fixture hours are configured for Monday; always use the next Monday.
+BOOKING_DAY = date.today() + timedelta(days=(7 - date.today().weekday()) % 7 or 7)
 
 
 @pytest.fixture()
@@ -100,7 +104,7 @@ def request_for(customer, service, employee, starts_at, key="idempotency-0001"):
 
 def test_booking_creation_holds_slot_and_includes_buffers(db_session, booking_context):
     business, user, customer, employee, service = booking_context
-    start = datetime(2026, 11, 16, 8, tzinfo=UTC)
+    start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
 
     result = create_booking(
         business_id=business.id,
@@ -121,7 +125,7 @@ def test_booking_creation_holds_slot_and_includes_buffers(db_session, booking_co
 
 def test_booking_idempotency_prevents_duplicate_records(db_session, booking_context):
     business, user, customer, employee, service = booking_context
-    start = datetime(2026, 11, 16, 8, tzinfo=UTC)
+    start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
     payload = request_for(customer, service, employee, start)
 
     first = create_booking(business_id=business.id, payload=payload, user=user, db=db_session)
@@ -132,7 +136,7 @@ def test_booking_idempotency_prevents_duplicate_records(db_session, booking_cont
 
 def test_overlapping_employee_reservation_is_rejected(db_session, booking_context):
     business, user, customer, employee, service = booking_context
-    first_start = datetime(2026, 11, 16, 8, tzinfo=UTC)
+    first_start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
     create_booking(
         business_id=business.id,
         payload=request_for(customer, service, employee, first_start, "idempotency-first"),
@@ -158,7 +162,7 @@ def test_booking_outside_business_hours_is_rejected(db_session, booking_context)
         create_booking(
             business_id=business.id,
             payload=request_for(
-                customer, service, employee, datetime(2026, 11, 16, 18, tzinfo=UTC)
+                customer, service, employee, datetime.combine(BOOKING_DAY, time(18), tzinfo=UTC)
             ),
             user=user,
             db=db_session,
@@ -173,7 +177,7 @@ def test_availability_returns_only_valid_employee_slots(db_session, booking_cont
     result = get_availability(
         business_id=business.id,
         service_id=service.id,
-        target_date=date(2026, 11, 16),
+        target_date=BOOKING_DAY,
         employee_id=None,
         slot_interval_minutes=30,
         user=user,
@@ -188,7 +192,7 @@ def test_availability_returns_only_valid_employee_slots(db_session, booking_cont
 
 def test_availability_excludes_existing_employee_hold(db_session, booking_context):
     business, user, customer, employee, service = booking_context
-    booked_start = datetime(2026, 11, 16, 6, 30, tzinfo=UTC)
+    booked_start = datetime.combine(BOOKING_DAY, time(6, 30), tzinfo=UTC)
     create_booking(
         business_id=business.id,
         payload=request_for(customer, service, employee, booked_start, "availability-hold-01"),
@@ -199,7 +203,7 @@ def test_availability_excludes_existing_employee_hold(db_session, booking_contex
     result = get_availability(
         business_id=business.id,
         service_id=service.id,
-        target_date=date(2026, 11, 16),
+        target_date=BOOKING_DAY,
         employee_id=employee.id,
         slot_interval_minutes=30,
         user=user,
@@ -218,7 +222,7 @@ def test_optional_employee_service_respects_requested_employee(db_session, booki
     result = get_availability(
         business_id=business.id,
         service_id=service.id,
-        target_date=date(2026, 11, 16),
+        target_date=BOOKING_DAY,
         employee_id=employee.id,
         slot_interval_minutes=30,
         user=user,
@@ -240,7 +244,7 @@ def test_resource_capacity_is_reserved_with_booking(db_session, booking_context)
     db_session.commit()
     result = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime(2026, 11, 16, 8, tzinfo=UTC), "resource-reservation-01"),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC), "resource-reservation-01"),
         user=user, db=db_session,
     )
     allocation = db_session.query(BookingSegmentResource).filter_by(
@@ -262,7 +266,7 @@ def test_resource_capacity_prevents_overlapping_booking(db_session, booking_cont
         business_id=business.id, service_id=service.id, resource_id=resource.id, quantity=1
     ))
     db_session.commit()
-    start = datetime(2026, 11, 16, 8, tzinfo=UTC)
+    start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
     first_payload = BookingInput(
         customer_id=customer.id,
         idempotency_key="resource-first-01",
@@ -292,7 +296,7 @@ def test_availability_excludes_slots_when_required_resource_is_full(db_session, 
         business_id=business.id, service_id=service.id, resource_id=resource.id, quantity=1
     ))
     db_session.commit()
-    booked_start = datetime(2026, 11, 16, 8, tzinfo=UTC)
+    booked_start = datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)
     create_booking(
         business_id=business.id,
         payload=request_for(customer, service, employee, booked_start, "availability-resource-full"),
@@ -302,7 +306,7 @@ def test_availability_excludes_slots_when_required_resource_is_full(db_session, 
     result = get_availability(
         business_id=business.id,
         service_id=service.id,
-        target_date=date(2026, 11, 16),
+        target_date=BOOKING_DAY,
         employee_id=employee.id,
         slot_interval_minutes=30,
         user=user,
@@ -318,7 +322,7 @@ def test_booking_can_be_confirmed_and_hold_is_cleared(db_session, booking_contex
     business, user, customer, employee, service = booking_context
     created = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime(2026, 11, 16, 8, tzinfo=UTC)),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)),
         user=user, db=db_session,
     )
     confirmed = confirm_booking(business.id, created["id"], user, db_session)
@@ -343,7 +347,7 @@ def test_confirmed_booking_can_be_cancelled_and_releases_reservations(db_session
     db_session.commit()
     created = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime(2026, 11, 16, 8, tzinfo=UTC)),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)),
         user=user, db=db_session,
     )
     confirm_booking(business.id, created["id"], user, db_session)
@@ -359,7 +363,7 @@ def test_expired_booking_hold_cannot_be_confirmed(db_session, booking_context):
     business, user, customer, employee, service = booking_context
     created = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime(2026, 11, 16, 8, tzinfo=UTC)),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)),
         user=user, db=db_session,
     )
     booking = db_session.get(__import__("app.models", fromlist=["Booking"]).Booking, created["id"])
@@ -379,7 +383,7 @@ def test_scheduled_hold_cleanup_expires_booking_and_segments(db_session, booking
     business, user, customer, employee, service = booking_context
     created = create_booking(
         business_id=business.id,
-        payload=request_for(customer, service, employee, datetime(2026, 11, 16, 8, tzinfo=UTC)),
+        payload=request_for(customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC)),
         user=user, db=db_session,
     )
     booking = db_session.get(Booking, created["id"])
@@ -402,7 +406,7 @@ def test_booking_list_is_scoped_to_authenticated_business(db_session, booking_co
     created = create_booking(
         business_id=business.id,
         payload=request_for(
-            customer, service, employee, datetime(2026, 11, 16, 8, tzinfo=UTC),
+            customer, service, employee, datetime.combine(BOOKING_DAY, time(8), tzinfo=UTC),
             "booking-list-test-0001",
         ),
         user=user,

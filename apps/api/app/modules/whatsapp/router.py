@@ -28,6 +28,7 @@ def get_whatsapp_settings(
         settings = BusinessWhatsAppSettings(business_id=business.id)
         db.add(settings)
         db.commit()
+        set_tenant_context(db, business.id)
         db.refresh(settings)
     return settings
 
@@ -63,5 +64,6 @@ def update_whatsapp_settings(
         },
     ))
     db.commit()
+    set_tenant_context(db, business.id)
     db.refresh(settings)
     return settings

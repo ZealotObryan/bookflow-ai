@@ -20,6 +20,9 @@ from app.modules.public_booking.router import (
 )
 
 
+BOOKING_DAY = date.today() + timedelta(days=(7 - date.today().weekday()) % 7 or 7)
+
+
 @pytest.fixture()
 def db_session():
     engine = create_engine("sqlite+pysqlite:///:memory:")
@@ -114,7 +117,7 @@ def test_public_availability_returns_slots_for_public_business(db_session):
     result = get_public_availability(
         slug=business.slug,
         service_id=service.id,
-        target_date=date(2026, 11, 16),
+        target_date=BOOKING_DAY,
         slot_interval_minutes=30,
         db=db_session,
     )
